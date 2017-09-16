@@ -6,8 +6,7 @@ import "core:strconv.odin";
 import "core:utf8.odin";
 import "core:utf16.odin";
 
-Null :: u8;
-
+// Differentiates the various types in the Value union.
 Value_Type :: enum {
 	NOT_SET,
 	STRING,
@@ -18,6 +17,8 @@ Value_Type :: enum {
 	BOOL,
 	NULL
 }
+
+// The basic value type. Make sure to check the kind first!
 Value :: struct {
 	using data: struct #raw_union {
 		str: string;
@@ -31,14 +32,16 @@ Value :: struct {
 	kind: Value_Type;
 }
 
+// Used to denote which error occured
 Error_Code :: enum u8 {
 	NO_ERROR, UNEXPECTED_END, INVALID_CHAR, INVALID_ESCAPE
 }
+
+// Always returned. To check if there's a true error, do `if err.code == json.Error_Code.NO_ERROR`
 Error :: struct {
 	code: Error_Code;
 	x, y: int;
 }
-NO_ERROR := Error{Error_Code.NO_ERROR, 0, 0};
 
 // PUBLIC API
 // Use these functions to interface with this JSON api.
@@ -98,6 +101,8 @@ free_value :: proc(val: ^Value, caller := #caller_location) {
 
 // END PUBLIC API
 
+
+NO_ERROR := Error{Error_Code.NO_ERROR, 0, 0};
 
 to_string :: proc(char: rune) -> string #inline {
 	return transmute(string) raw.String {
