@@ -25,16 +25,17 @@ Value :: struct {
 		object: map[string]^Value;
 		arr: [dynamic]^Value;
 		float: f64;
-		integer: int;
+		integer: i128;
 		boolean: bool;
 	};
 	keystore: [dynamic]string;
 	kind: Value_Type;
+	x, y: int;
 }
 
 // Used to denote which error occured
 Error_Code :: enum u8 {
-	NO_ERROR, UNEXPECTED_END, INVALID_CHAR, INVALID_ESCAPE
+	NO_ERROR = 0, UNEXPECTED_END, INVALID_CHAR, INVALID_ESCAPE, FAILED_TO_OPEN_FILE, INCOMPATIBLE_TYPES
 }
 
 // Always returned. To check if there's a true error, do `if err.code == json.Error_Code.NO_ERROR`
@@ -49,20 +50,47 @@ Error :: struct {
 // Serialize a JSON value into a string recursively.
 write :: proc(json: ^Value) -> string {
 	dynstr: [dynamic]u8;
-	write_value(json, 0, &dynstr);
-	return to_string(dynstr);
+	_write_value(json, 0, &dynstr);
+	return _to_string(dynstr);
 }
 
-// Parse a JSON file. Returns a Value struct, which represents the root object node.
+// Parse a JSON string. Returns a Value struct, which represents the root object node.
 parse :: proc(file: string) -> (^Value, Error) {
 
-	parser: Parser;
+	parser: _Parser;
 	parser.pos = 0;
 	parser.file = file;
 	parser.x = 0;
 	parser.y = 1;
-	return parse_value(&parser);
+	return _parse_value(&parser);
 }
+
+// Parse a JSON file. Returns a Value struct, which represents the root object node.
+parse_file :: proc(path: string) -> (^Value, Error) #inline {
+
+	contents, ok := os.read_entire_file(path);
+	
+	if !ok do return nil, Error{Error_Code.FAILED_TO_OPEN_FILE, 0, 0};
+
+	return parse(_to_string(contents));
+}
+/*
+// Parse a JSON string. Returns a struct of type T, with the JSON data unmarshalled into the struct.
+parse :: proc(T: type, file: string) -> (T, Error) #inline {
+
+	data, err := parse(file);
+	if err.code != Error_Code.NO_ERROR do return T{}, err;
+	return _unmarshall(T, data);
+}
+
+// Parse a JSON file. Returns a struct of type T, with the JSON data unmarshalled into the struct.
+parse_file :: proc(T: type, path: string) -> (T, Error) #inline {
+
+	data, err := parse_file(path);
+	if err.code != Error_Code.NO_ERROR do return T{}, err;
+	return _unmarshall(T, data);
+}
+*/
 
 // Use this to free the JSON data when you're done with it.
 free_value :: proc(val: ^Value, caller := #caller_location) {
@@ -104,30 +132,30 @@ free_value :: proc(val: ^Value, caller := #caller_location) {
 
 NO_ERROR := Error{Error_Code.NO_ERROR, 0, 0};
 
-to_string :: proc(char: rune) -> string #inline {
+_to_string :: proc(char: rune) -> string #inline {
 	return transmute(string) raw.String {
 		data = cast(^u8) &char,
 		len  = size_of(char),
 	};
 }
 
-to_string :: proc(dyn: [dynamic]u8) -> string #inline do return (cast(^string) &dyn)^;
-to_string :: proc(slc: []u8)        -> string #inline do return (cast(^string) &slc)^;
+_to_string :: proc(dyn: [dynamic]u8) -> string #inline do return (cast(^string) &dyn)^;
+_to_string :: proc(slc: []u8)        -> string #inline do return (cast(^string) &slc)^;
 
-is_digit :: proc(char: rune) -> bool #inline do return char >= '0' && char <= '9';
+_is_digit :: proc(char: rune) -> bool #inline do return char >= '0' && char <= '9';
 
-is_digit :: proc(char: u8) -> bool #inline do return is_digit(cast(rune)char);
+_is_digit :: proc(char: u8) -> bool #inline do return _is_digit(cast(rune)char);
 
-is_whitespace :: proc(char: rune) -> bool #inline do return char == ' ' || char == '\t' || char == '\r' || char == '\n';
+_is_whitespace :: proc(char: rune) -> bool #inline do return char == ' ' || char == '\t' || char == '\r' || char == '\n';
 
-is_whitespace :: proc(char: u8) -> bool #inline do return is_whitespace(cast(rune)char);
+_is_whitespace :: proc(char: u8) -> bool #inline do return _is_whitespace(cast(rune)char);
 
-append_rune :: proc(buf: ^[dynamic]u8, r: rune) #inline {
+_append_rune :: proc(buf: ^[dynamic]u8, r: rune) #inline {
 	bytes, size := utf8.encode_rune(r);
 	for i in 0..size do append(buf, bytes[i]);
 }
 
-append_escaped_string :: proc(buf: ^[dynamic]u8, str: string) {
+_append_escaped_string :: proc(buf: ^[dynamic]u8, str: string) {
 
 	escape := false;
 
@@ -143,55 +171,55 @@ append_escaped_string :: proc(buf: ^[dynamic]u8, str: string) {
 			case:     c = char; 
 			}
 
-			append_rune(buf, c);
+			_append_rune(buf, c);
 			escape = false;
 		} else {
 			match char {
 			// @todo: err if quotes not on ends of string
 			case '\\': escape = true;
 			case '"':  continue;
-			case:      append_rune(buf, char);
+			case:      _append_rune(buf, char);
 			}
 		}
 	}
 }
 
-indent :: proc(buf: ^[dynamic]u8, ind: int) #inline {
+_indent :: proc(buf: ^[dynamic]u8, ind: int) #inline {
 	for i in 0..ind do append(buf, '\t');
 }
 
-write_value :: proc(val: ^Value, ind: int, buf: ^[dynamic]u8) {
+_write_value :: proc(val: ^Value, ind: int, buf: ^[dynamic]u8) {
 	match val.kind {
 		case Value_Type.STRING: {
 			append(buf, '"');
-			append_escaped_string(buf, val.str);
+			_append_escaped_string(buf, val.str);
 			append(buf, '"');
 		}
 		case Value_Type.OBJECT: {
 			append(buf, '{');
 			append(buf, '\n');
 			for key, i in val.keystore {
-				indent(buf, ind+1);
+				_indent(buf, ind+1);
 				append(buf, '"');
-				append_escaped_string(buf, key);
+				_append_escaped_string(buf, key);
 				append(buf, "\" : ");
-				write_value(val.object[key], ind+1, buf);
+				_write_value(val.object[key], ind+1, buf);
 				if i < len(val.keystore) - 1 do append(buf, ',');
 				append(buf, '\n');
 			}
-			indent(buf, ind);
+			_indent(buf, ind);
 			append(buf, '}');
 		}
 		case Value_Type.ARRAY: {
 			append(buf, '[');
 			append(buf, '\n');
 			for newval, i in val.arr {
-				indent(buf, ind+1);
-				write_value(newval, ind+1, buf);
+				_indent(buf, ind+1);
+				_write_value(newval, ind+1, buf);
 				if i < len(val.arr) - 1 do append(buf, ',');
 				append(buf, '\n');
 			}
-			indent(buf, ind);
+			_indent(buf, ind);
 			append(buf, ']');
 		}
 		case Value_Type.F64: {
@@ -207,7 +235,8 @@ write_value :: proc(val: ^Value, ind: int, buf: ^[dynamic]u8) {
 
 			tmpbuf: [386]u8;
 
-			str := strconv.itoa(tmpbuf[1..1], val.integer);
+			flags : strconv.Int_Flag;
+			str := strconv.append_bits(tmpbuf[1..1], u128(val.integer), 10, true, 128, "0123456789abcdefx", flags);
 			str = string(tmpbuf[...len(str)]);
 			append(buf, str);
 			
@@ -221,12 +250,12 @@ write_value :: proc(val: ^Value, ind: int, buf: ^[dynamic]u8) {
 	}
 }
 
-Parser :: struct {
+_Parser :: struct {
 	file: string;
 	pos, x, y: int;
 }
 
-skip_whitespace :: proc(using parser: ^Parser) -> Error {
+_skip_whitespace :: proc(using parser: ^_Parser) -> Error {
 
 	for ; pos<len(file); pos+=1 {
 
@@ -240,22 +269,24 @@ skip_whitespace :: proc(using parser: ^Parser) -> Error {
 			continue;
 		}
 
-		if is_whitespace(c) do continue;
+		if _is_whitespace(c) do continue;
 		
 		break;
 	}
 
-	if pos == len(file)-1 && is_whitespace(file[pos]) do return Error{Error_Code.UNEXPECTED_END, x, y};
+	if (pos == len(file)-1 && _is_whitespace(file[pos])) || pos == len(file) do return Error{Error_Code.UNEXPECTED_END, x, y};
+
 	return NO_ERROR;
 }
 
-parse_object :: proc(using parser: ^Parser) -> (^Value, Error) {
+_parse_object :: proc(using parser: ^_Parser) -> (^Value, Error) {
 	
 	// We start at the {, so let's go ahead and move up.
 	x += 1;
 	pos += 1;
 
 	val := new(Value);
+	val.x = x; val.y = y;
 	val.kind = Value_Type.OBJECT;
 
 	// Because x is incremented at the start instead of the bottom of the loop.
@@ -265,7 +296,7 @@ parse_object :: proc(using parser: ^Parser) -> (^Value, Error) {
 		x += 1;
 		
 		// Skip to the first char.
-		err := skip_whitespace(parser);
+		err := _skip_whitespace(parser);
 		if err.code != Error_Code.NO_ERROR {
 			free_value(val);
 			return nil, err;
@@ -276,7 +307,7 @@ parse_object :: proc(using parser: ^Parser) -> (^Value, Error) {
 			
 			// Parse the value's key.
 			key : ^Value;
-			key, err = parse_string(parser);
+			key, err = _parse_string(parser);
 
 			if err.code != Error_Code.NO_ERROR {
 				free_value(val);
@@ -284,7 +315,7 @@ parse_object :: proc(using parser: ^Parser) -> (^Value, Error) {
 			}
 
 			// Skip to the colon
-			err = skip_whitespace(parser);
+			err = _skip_whitespace(parser);
 			if err.code != Error_Code.NO_ERROR {
 				free_value(val);
 				return nil, err;
@@ -301,7 +332,7 @@ parse_object :: proc(using parser: ^Parser) -> (^Value, Error) {
 			pos += 1;
 
 			// Skip to the actual value.
-			err = skip_whitespace(parser);
+			err = _skip_whitespace(parser);
 			if err.code != Error_Code.NO_ERROR {
 				free_value(val);
 				return nil, err;
@@ -309,7 +340,7 @@ parse_object :: proc(using parser: ^Parser) -> (^Value, Error) {
 
 			// Set the actual property of the object.
 			keys_val: ^Value;
-			keys_val, err = parse_value(parser);
+			keys_val, err = _parse_value(parser);
 
 			if err.code != Error_Code.NO_ERROR {
 				thingy, _ := val.object["name"];
@@ -320,7 +351,7 @@ parse_object :: proc(using parser: ^Parser) -> (^Value, Error) {
 			append(&val.keystore, key.str);
 
 			// Skip to the comma, or to the ending }
-			err = skip_whitespace(parser);
+			err = _skip_whitespace(parser);
 			if err.code != Error_Code.NO_ERROR {
 				free_value(val);
 				return nil, err;
@@ -347,13 +378,14 @@ parse_object :: proc(using parser: ^Parser) -> (^Value, Error) {
 
 }
 
-parse_array :: proc(using parser: ^Parser) -> (^Value, Error) {
+_parse_array :: proc(using parser: ^_Parser) -> (^Value, Error) {
 	
 	// We start at the [, so let's go ahead and move up.
 	x += 1;
 	pos += 1;
 
 	val := new(Value);
+	val.x = x; val.y = y;
 	val.kind = Value_Type.ARRAY;
 
 	// Because x is incremented at the start instead of the bottom of the loop.
@@ -363,7 +395,7 @@ parse_array :: proc(using parser: ^Parser) -> (^Value, Error) {
 		x += 1;
 
 		// Skip to the value.
-		err := skip_whitespace(parser);
+		err := _skip_whitespace(parser);
 		if err.code != Error_Code.NO_ERROR {
 			free_value(val);
 			return nil, err;
@@ -371,7 +403,7 @@ parse_array :: proc(using parser: ^Parser) -> (^Value, Error) {
 
 		// Set the actual property of the object.
 		item: ^Value;
-		item, err = parse_value(parser);
+		item, err = _parse_value(parser);
 
 		if err.code != Error_Code.NO_ERROR {
 			free_value(val);
@@ -381,7 +413,7 @@ parse_array :: proc(using parser: ^Parser) -> (^Value, Error) {
 		append(&val.arr, item);
 
 		// Skip to the comma, or to the ending ]
-		err = skip_whitespace(parser);
+		err = _skip_whitespace(parser);
 		if err.code != Error_Code.NO_ERROR {
 			free_value(val);
 			return nil, err;
@@ -437,7 +469,7 @@ is_surrogate_pair :: proc(a: rune, b: rune) -> bool {
 	return a >= 0xD800 && a <= 0xDBFF && b >= 0xDC00 && b <= 0xDFFF;
 }
 
-parse_utf16_literal :: proc(using parser: ^Parser, str: ^([dynamic]u8)) {
+_parse_utf16_literal :: proc(using parser: ^_Parser, str: ^([dynamic]u8)) {
 
 	runes: [dynamic]rune;
 
@@ -462,13 +494,14 @@ parse_utf16_literal :: proc(using parser: ^Parser, str: ^([dynamic]u8)) {
 	free(runes);
 }
 
-parse_string :: proc(using parser: ^Parser) -> (^Value, Error) {
+_parse_string :: proc(using parser: ^_Parser) -> (^Value, Error) {
 	
 	// We start at the [, so let's go ahead and move up.
 	x += 1;
 	pos += 1;
 
 	val := new(Value);
+	val.x = x; val.y = y;
 	val.kind = Value_Type.STRING;
 	dynstr : [dynamic]u8;
 
@@ -506,7 +539,7 @@ parse_string :: proc(using parser: ^Parser) -> (^Value, Error) {
 					case 'u': {
 						x -= 1;
 						pos -= 1;
-						parse_utf16_literal(parser, &dynstr);
+						_parse_utf16_literal(parser, &dynstr);
 						pos -= 1;
 						x =- 1;
 					}
@@ -542,10 +575,10 @@ parse_string :: proc(using parser: ^Parser) -> (^Value, Error) {
 
 }
 
-parse_number :: proc(using parser: ^Parser) -> (^Value, Error) {
+_parse_number :: proc(using parser: ^_Parser) -> (^Value, Error) {
 
 	val := new(Value);
-	//val.kind = Value_Type.;
+	val.x = x; val.y = y;
 	number_value_str : [dynamic]u8;
 
 	has_decimal: bool = false;
@@ -564,7 +597,7 @@ parse_number :: proc(using parser: ^Parser) -> (^Value, Error) {
 			if(has_decimal) do return nil, Error{Error_Code.INVALID_CHAR, x, y};
 			has_decimal = true;
 			append(&number_value_str, c);
-		} else if is_digit(c) do append(&number_value_str, c);
+		} else if _is_digit(c) do append(&number_value_str, c);
 		else do break;
 	}
 
@@ -575,14 +608,14 @@ parse_number :: proc(using parser: ^Parser) -> (^Value, Error) {
 		val.float = strconv.parse_f64(number_value_odin_str) * (has_negative?-1:1);
 	} else {
 		val.kind = Value_Type.INT;
-		val.integer = strconv.parse_int(number_value_odin_str) * (has_negative?-1:1);
+		val.integer = strconv.parse_i128(number_value_odin_str) * (has_negative?-1:1);
 	}
 
 	free(number_value_str);
 	return val, NO_ERROR;
 }
 
-parser_match :: proc(using parser: ^Parser, needle: string) -> bool {
+parser_match :: proc(using parser: ^_Parser, needle: string) -> bool {
 	length := len(needle);
 	if(len(file) > pos + length + 1) {
 		if(file[pos..pos+length] == needle) {
@@ -594,10 +627,11 @@ parser_match :: proc(using parser: ^Parser, needle: string) -> bool {
 	return false;
 }
 
-parse_null :: proc(using parser: ^Parser) -> (^Value, Error) {
+_parse_null :: proc(using parser: ^_Parser) -> (^Value, Error) {
 	if parser_match(parser, "null") {
 
 		val := new(Value);
+		val.x = x; val.y = y;
 		val.kind = Value_Type.NULL;
 		return val, NO_ERROR;
 
@@ -607,10 +641,11 @@ parse_null :: proc(using parser: ^Parser) -> (^Value, Error) {
 	}
 }
 
-parse_bool :: proc(using parser: ^Parser) -> (^Value, Error) {
+_parse_bool :: proc(using parser: ^_Parser) -> (^Value, Error) {
 	if parser_match(parser, "true") {
 
 		val := new(Value);
+		val.x = x; val.y = y;
 		val.kind = Value_Type.BOOL;
 		val.boolean = true;
 		return val, NO_ERROR;
@@ -618,6 +653,7 @@ parse_bool :: proc(using parser: ^Parser) -> (^Value, Error) {
 	} else if parser_match(parser, "false") {
 
 		val := new(Value);
+		val.x = x; val.y = y;
 		val.kind = Value_Type.BOOL;
 		val.boolean = false;
 		return val, NO_ERROR;
@@ -629,18 +665,18 @@ parse_bool :: proc(using parser: ^Parser) -> (^Value, Error) {
 
 }
 
-parse_value :: proc(using parser: ^Parser) -> (^Value, Error) {
+_parse_value :: proc(using parser: ^_Parser) -> (^Value, Error) {
 
-	err := skip_whitespace(parser);
+	err := _skip_whitespace(parser);
 	if err.code != Error_Code.NO_ERROR do return nil, err;
 
 	c := file[pos];
-	if c == '{' do return parse_object(parser);
-	else if c == '[' do return parse_array(parser);
-	else if c == '"' || c == '\'' do return parse_string(parser);
-	else if is_digit(c) || c == '-' do return parse_number(parser);
-	else if c == 'n' do return parse_null(parser);
-	else if c == 't' || c == 'f' do return parse_bool(parser);
+	if c == '{' do return _parse_object(parser);
+	else if c == '[' do return _parse_array(parser);
+	else if c == '"' || c == '\'' do return _parse_string(parser);
+	else if _is_digit(c) || c == '-' do return _parse_number(parser);
+	else if c == 'n' do return _parse_null(parser);
+	else if c == 't' || c == 'f' do return _parse_bool(parser);
 	else {
 		return nil, Error{Error_Code.INVALID_CHAR, x, y};
 	}
@@ -648,3 +684,10 @@ parse_value :: proc(using parser: ^Parser) -> (^Value, Error) {
 	return nil, Error{Error_Code.UNEXPECTED_END, 0, 0};
 
 }
+
+/*
+_unmarshall :: proc(T: type, data: ^Value) -> (T, Error) {
+
+	return T{}, Error{Error_Code.UNEXPECTED_END, 0, 0};
+}
+*/
