@@ -117,17 +117,23 @@ marshall_ptr :: proc(result: rawptr, ti: ^Type_Info, val: ^json.Value) -> json.E
 			if val.kind == json.Value_Type.ARRAY {
 
 				if info.count >= len(val.arr) {
+
 					for e, i in val.arr do marshall_ptr(cast(^u8)result + info.elem_size * i, info.elem, val.arr[i]);
-				} else {
-					return T{}, json.Error{json.Error_Code.INCOMPATIBLE_TYPES, val.x, val.y};
+					return json.NO_ERROR;
+
 				}
 
-				return json.NO_ERROR;
 
 			} else if val.kind == json.Value_Type.OBJECT {
 
-				if info.count
+				match info.count {
+
+					case 2:
+						x := val.object
+				}
 			}
+
+			return T{}, json.Error{json.Error_Code.INCOMPATIBLE_TYPES, val.x, val.y};
 	}
 }
 marshall :: proc(T: type, val: ^json.Value) -> (T, json.Error) {
