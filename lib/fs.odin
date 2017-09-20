@@ -10,9 +10,115 @@ when ODIN_OS == "windows" {
 } else {
 	foreign_system_library libc "c";
 	foreign libc {
-		_unix_getcwd :: proc(buf: ^u8, size: i64) -> ^u8 #link_name "getcwd" ---;
+		_unix_getcwd :: proc(buf: ^u8, size: i64) -> ^u8 #cc_c #link_name "getcwd" ---;
+		_unix_closedir :: proc(^_DIR) -> i32             #cc_c #link_name "closedir" ---;
+		_unix_chdir :: proc(^u8) -> i32                  #cc_c #link_name "chdir" ---;
+	}
+	when ODIN_OS == "linux" {
+		foreign libc {
+			_unix_readdir :: proc(^_DIR) -> ^_dirent #cc_c #link_name "readdir64" ---;
+		}
+	} else when ODIN_OS == "osx" {
+		foreign libc {
+			_unix_readdir :: proc(^_DIR) -> ^_dirent #cc_c #link_name "readdir$INODE64" ---;
+		}
+	} else {
+		foreign libc {
+			_unix_readdir :: proc(^_DIR) -> ^_dirent #cc_c #link_name "readdir" ---;
+		}
+	}
+	when ODIN_OS == "osx" {
+		foreign libc {
+			_unix_opendir :: proc(path: ^u8) -> ^_DIR #cc_c #link_name "opendir$INODE64" ---;
+		}
+	} else {
+		foreign libc {
+			_unix_opendir :: proc(path: ^u8) -> ^_DIR #cc_c #link_name "opendir" ---;
+		}
 	}
 
+	_Dirent_Type :: enum u8 {
+		DT_UNKNOWN  = 0,
+		DT_FIFO     = 1,
+		DT_CHR      = 2,
+		DT_DIR      = 4,
+		DT_BLK      = 6,
+		DT_REG      = 8,
+		DT_LNK      = 10,
+		DT_SOCK     = 12,
+		DT_WHT      = 14
+	}
+
+	when ODIN_OS == "linux" {
+		_dirent :: struct #ordered {
+			inode: os.ino;
+			off: os.off;
+			reclen: u16;
+			kind: _Dirent_Type;
+			name: [256]u8;
+		}
+	} else {
+		_dirent :: struct #ordered {
+			inode: os.ino;
+			seekoff: u64;
+			reclen: u16;
+			namlen: u16;
+			kind: _Dirent_Type;
+			name: [256]u8;
+		}
+	}
+
+	_DIR :: rawptr;
+
+}
+
+chdir :: proc(path: string) -> bool {
+
+	c_path := strings.new_c_string(path);
+	defer(free(c_path));
+
+	when ODIN_OS == "windows" {
+
+		_ := compile_assert(false);
+		return false;
+
+	} else {
+
+		return _unix_chdir(c_path) == 0;
+	}
+}
+
+// Allocates memory...?
+// At least, the array is allocated. Not sure about the contents.
+list_dir :: proc(path: string) -> ([]string, bool) {
+
+	c_path := strings.new_c_string(path);
+	defer(free(c_path));
+
+	when ODIN_OS == "windows" {
+
+		_ := compile_assert(false);
+		return nil, false;
+		
+	} else {
+
+		dp := _unix_opendir(c_path);
+
+		if dp == nil do return nil, false;
+
+		defer((cast(proc(^_DIR))_unix_closedir)(dp));
+
+		paths : [dynamic]string;
+
+		ep := _unix_readdir(dp);
+
+		for ;ep != nil; ep = _unix_readdir(dp) {
+			child := strings.to_odin_string(&ep.name[0]);
+			if child != "." && child != ".." do	append(&paths, child);
+		}
+
+		return paths[..], true;
+	}
 }
 
 // Returns whether or not a file exists.
@@ -40,12 +146,13 @@ is_file :: proc(path: string) -> bool #inline {
 		return !is_directory(path);
 
 	} else {
-		info, err := os.stat(path);
-		if err do return false;
+		info, ok := os.stat(path);
+		when ODIN_OS == "osx" {if !ok do return false;}
+		else {if ok != 0 do return false;}
 		return os.S_ISREG(info.mode);
 	}
 }
-import "core:fmt.odin";
+
 is_directory :: proc(path: string) -> bool #inline {
 
 	when ODIN_OS == "windows" {
@@ -56,9 +163,9 @@ is_directory :: proc(path: string) -> bool #inline {
 
 	} else {
 
-		info, err := os.stat(path);
-		fmt.println(info, err);
-		if err do return false;
+		info, ok := os.stat(path);
+		when ODIN_OS == "osx" {if !ok do return false;}
+		else {if ok != 0 do return false;}
 		return os.S_ISDIR(info.mode);
 	}
 }
@@ -71,12 +178,15 @@ is_special :: proc(path: string) -> bool #inline {
 	when ODIN_OS == "windows" {
 		return false;
 	} else {
-		info, err := os.stat(path);
-		if err do return false;
+		info, ok := os.stat(path);
+		when ODIN_OS == "osx" {if !ok do return false;}
+		else {if ok != 0 do return false;}
 		return !(os.S_ISREG(info.mode) || os.S_ISDIR(info.mode));
 	}
 }
 
+// Returns the current working directory.
+// Allocates memory.
 cwd :: proc() -> (string, bool) {
 
 	when ODIN_OS == "windows" {
@@ -120,4 +230,33 @@ cwd :: proc() -> (string, bool) {
 
 		return strings.new_string(odin_str), true;
 	}
+}
+
+is_path_separator :: proc(c: u8) -> bool #inline {
+	when ODIN_OS == "windows" {
+		return c == '\\' || c == '/';
+	} else {
+		return c == '/';
+	}
+}
+
+// Return the filename of a path. E.g. /tmp/my/file.odin -> file.odin
+base_name :: proc(path: string) -> string {
+	first_non_sep := -1;
+	for i := len(path)-1; i>0; i-=1 {
+		if is_path_separator(path[i]) {
+			if first_non_sep != -1 do return path[i+1..first_non_sep+1];
+		} else if first_non_sep == -1 do first_non_sep = i;
+	}
+	return path;
+}
+// Return the parent of a path. E.g. /tmp/my/file.odin -> file.odin, /tmp/my -> /tmp, /tmp/my///// -> /tmp
+parent_name :: proc(path: string) -> string {
+	hit_non_sep := false;
+	for i := len(path)-1; i>0; i-=1 {
+		if is_path_separator(path[i]) {
+			if hit_non_sep do return path[0..i];
+		} else do hit_non_sep = true;
+	}
+	return path;
 }
