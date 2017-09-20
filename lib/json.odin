@@ -1,4 +1,4 @@
-import "core:strings.odin";
+import strings "str.odin";
 import "core:raw.odin";
 import "core:fmt.odin";
 import "core:os.odin";
@@ -146,10 +146,6 @@ _is_digit :: proc(char: rune) -> bool #inline do return char >= '0' && char <= '
 
 _is_digit :: proc(char: u8) -> bool #inline do return _is_digit(cast(rune)char);
 
-_is_whitespace :: proc(char: rune) -> bool #inline do return char == ' ' || char == '\t' || char == '\r' || char == '\n';
-
-_is_whitespace :: proc(char: u8) -> bool #inline do return _is_whitespace(cast(rune)char);
-
 _append_rune :: proc(buf: ^[dynamic]u8, r: rune) #inline {
 	bytes, size := utf8.encode_rune(r);
 	for i in 0..size do append(buf, bytes[i]);
@@ -269,12 +265,12 @@ _skip_whitespace :: proc(using parser: ^_Parser) -> Error {
 			continue;
 		}
 
-		if _is_whitespace(c) do continue;
+		if strings.is_whitespace(c) do continue;
 		
 		break;
 	}
 
-	if (pos == len(file)-1 && _is_whitespace(file[pos])) || pos == len(file) do return Error{Error_Code.UNEXPECTED_END, x, y};
+	if (pos == len(file)-1 && strings.is_whitespace(file[pos])) || pos == len(file) do return Error{Error_Code.UNEXPECTED_END, x, y};
 
 	return NO_ERROR;
 }

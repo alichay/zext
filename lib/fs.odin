@@ -1,5 +1,5 @@
 import "core:os.odin";
-import "core:strings.odin";
+import "zext:str.odin";
 
 when ODIN_OS == "windows" {
 	import win32 "core:sys/windows.odin";
@@ -74,7 +74,7 @@ when ODIN_OS == "windows" {
 
 chdir :: proc(path: string) -> bool {
 
-	c_path := strings.new_c_string(path);
+	c_path := str.new_c_string(path);
 	defer(free(c_path));
 
 	when ODIN_OS == "windows" {
@@ -92,7 +92,7 @@ chdir :: proc(path: string) -> bool {
 // At least, the array is allocated. Not sure about the contents.
 list_dir :: proc(path: string) -> ([]string, bool) {
 
-	c_path := strings.new_c_string(path);
+	c_path := str.new_c_string(path);
 	defer(free(c_path));
 
 	when ODIN_OS == "windows" {
@@ -113,7 +113,7 @@ list_dir :: proc(path: string) -> ([]string, bool) {
 		ep := _unix_readdir(dp);
 
 		for ;ep != nil; ep = _unix_readdir(dp) {
-			child := strings.to_odin_string(&ep.name[0]);
+			child := str.to_odin_string(&ep.name[0]);
 			if child != "." && child != ".." do	append(&paths, child);
 		}
 
@@ -209,7 +209,7 @@ cwd :: proc() -> (string, bool) {
 			written := _get_current_directory(len, &buf[0]);
 
 			if written != 0 {
-				return strings.to_odin_string(&buf[0]), true;
+				return str.to_odin_string(&buf[0]), true;
 			}
 
 		}
@@ -226,12 +226,17 @@ cwd :: proc() -> (string, bool) {
 		// with the proper allocator.
 		defer(os.heap_free(heap_cwd));
 		// A temporary converted string that will be duplicated with data from the context's allocator.
-		odin_str := strings.to_odin_string(heap_cwd);
+		odin_str := str.to_odin_string(heap_cwd);
 
-		return strings.new_string(odin_str), true;
+		return str.new_string(odin_str), true;
 	}
 }
 
+when ODIN_OS == "windows" {
+	SEPERATOR :: '\\';
+} else {
+	SEPERATOR :: '/';
+}
 is_path_separator :: proc(c: u8) -> bool #inline {
 	when ODIN_OS == "windows" {
 		return c == '\\' || c == '/';
@@ -259,4 +264,75 @@ parent_name :: proc(path: string) -> string {
 		} else do hit_non_sep = true;
 	}
 	return path;
+}
+
+// Convert a relative path to an absolute path
+to_absolute_from_cwd :: proc(paths: ...string) -> (string, bool) {
+	cwd_str, ok := cwd();
+	if !ok do return "", false;
+	defer free(cwd_str);
+	spread := make([]string, len(paths)+1);
+	spread[0] = cwd_str;
+	for _, i in paths do spread[i+1] = paths[i];
+	return to_absolute(...spread), true;
+}
+
+import "core:fmt.odin";
+to_absolute :: proc(paths: ...string) -> string {
+	assert(len(paths) > 0);
+	if len(paths) > 1 {
+		second := paths[1];
+		when ODIN_OS == "windows" {
+			if len(second) > 2 do
+				if (second[0] >= 'a' && second[0] <= 'z') || (second[0] >= 'A' && second[0] <= 'Z') {
+					if second[1] == ':' do return to_absolute(...paths[1..]);
+				}
+		} else {
+			if len(paths[0]) > 1 do
+				if(second[0] == '/') do return to_absolute(...paths[1..]);
+		}
+	}
+	path_ctor: [dynamic]string;
+	defer free(path_ctor);
+	last_entry: int = 0;
+	str_len := 0;
+	for path in paths {
+		start_char := 0;
+		for i in 0..len(path)+1 {
+			c := (i == len(path)) ? 0 : path[i];
+			if is_path_separator(c) || i == len(path) {
+				str := path[start_char..i];
+				if str == "." {}
+				else if str == ".." {
+					if last_entry != 0 {
+						last_entry -= 1;
+						str_len -= len(path_ctor[last_entry]);
+					}
+				} else if last_entry != 0 && str == "" {
+				} else if last_entry == len(path_ctor) {
+					last_entry = append(&path_ctor, str);
+					str_len += len(str);
+				} else {
+					path_ctor[last_entry] = str;
+					last_entry += 1;
+					str_len += len(str);
+				}
+				start_char = i+1;
+			}
+		}
+	}
+	str_len += len(path_ctor) - 1;
+	final_str := make([]u8, str_len>1?str_len:1);
+	gi := 0;
+	for p, i in path_ctor[..last_entry] {
+		if i != 0 || last_entry == 1 {
+			final_str[gi] = '/';
+			gi += 1;
+		}
+		for j in 0..len(p) {
+			final_str[gi+j] = p[j];
+		}
+		gi += len(p);
+	}
+	return string(final_str);
 }
