@@ -1,5 +1,6 @@
 import "core:strings.odin";
 import "core:os.odin";
+import "posix.odin";
 import "core:fmt.odin";
 import "core:mem.odin";
 
@@ -13,18 +14,18 @@ when ODIN_OS == "windows" {
 } else {
 	foreign_system_library libc "c";
 	foreign libc {
-		_fork    :: proc() -> os.pid                       #cc_c #link_name "fork"      ---;
-		_pipe    :: proc(^os.Handle) -> i32                #cc_c #link_name "pipe"      ---;
-		_dup2    :: proc(os.Handle, os.Handle) -> i32      #cc_c #link_name "dup2"      ---;
-		_execvp  :: proc(path: ^u8, args: ^^u8) -> i32     #cc_c #link_name "execvp"    ---;
-		_wait    :: proc(rawptr) -> os.pid                 #cc_c #link_name "wait"      ---;
-		_waitpid :: proc(os.pid, ^i32, i32) -> os.pid      #cc_c #link_name "waitpid"   ---;
-		_nsleep  :: proc(dur, rem: ^os.Time_Spec) -> i32   #cc_c #link_name "nanosleep" ---;
-		_getpid  :: proc() -> os.pid                       #cc_c #link_name "getpid"    ---;
+		_fork    :: proc() -> posix.pid                      #cc_c #link_name "fork"      ---;
+		_pipe    :: proc(^os.Handle) -> i32                  #cc_c #link_name "pipe"      ---;
+		_dup2    :: proc(os.Handle, os.Handle) -> i32        #cc_c #link_name "dup2"      ---;
+		_execvp  :: proc(path: ^u8, args: ^^u8) -> i32       #cc_c #link_name "execvp"    ---;
+		_wait    :: proc(rawptr) -> posix.pid                #cc_c #link_name "wait"      ---;
+		_waitpid :: proc(posix.pid, ^i32, i32) -> posix.pid  #cc_c #link_name "waitpid"   ---;
+		_nsleep  :: proc(dur, rem: ^posix.Time_Spec) -> i32  #cc_c #link_name "nanosleep" ---;
+		_getpid  :: proc() -> posix.pid                      #cc_c #link_name "getpid"    ---;
 	}
 }
 
-NS_SLEEP : os.Nanosecond : os.Nanosecond(1000000.0 * 100);
+NS_SLEEP : posix.Nanosecond : posix.Nanosecond(1000000.0 * 100);
 
 spawn :: proc(cb: proc(string), args: ...string) {
 
@@ -43,10 +44,10 @@ spawn :: proc(cb: proc(string), args: ...string) {
 		_ := compile_assert(false);
 	} else {
 
-		pid_packet_size :: size_of(os.pid) / size_of(u8) + 1;
+		pid_packet_size :: size_of(posix.pid) / size_of(u8) + 1;
 	
 		stream: [2]os.Handle;
-		pid: os.pid;
+		pid: posix.pid;
 
 		if _pipe(&stream[0]) == -1 {
 			fmt.println("Failed to create pipes.");
@@ -64,7 +65,7 @@ spawn :: proc(cb: proc(string), args: ...string) {
 			_dup2(stream[1], os.stdout);
 			os.close(stream[0]);
 			os.close(stream[1]);
-			(cast(^os.pid)(&pid_data[0]))^ = _getpid();
+			(cast(^posix.pid)(&pid_data[0]))^ = _getpid();
 			pid_data[pid_packet_size-1] = '\n';
 			os.write(os.stdout, pid_data);
 
@@ -78,7 +79,7 @@ spawn :: proc(cb: proc(string), args: ...string) {
 			os.close(stream[1]);
 			buf: [4096]u8;
 			_, _ := os.read(stream[0], pid_data[0..len(pid_data)]);
-			child_pid := (cast(^os.pid)(&pid_data[0]))^;
+			child_pid := (cast(^posix.pid)(&pid_data[0]))^;
 			fmt.println("CHILD:", child_pid);
 
 			looping := true;
@@ -95,7 +96,7 @@ spawn :: proc(cb: proc(string), args: ...string) {
 				if data != "" do cb(data);
 				//fmt.println("LS", loop_state);
 
-				sleep_time := os.Time_Spec{0, NS_SLEEP};
+				sleep_time := posix.Time_Spec{0, NS_SLEEP};
 				i = i + 1;
 				_nsleep(&sleep_time, nil); // .25ms
 			}
