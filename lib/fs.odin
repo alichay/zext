@@ -1,108 +1,19 @@
-import "core:os.odin";
+using import "zext:TEMP.odin";
+import "os.odin";
 import "str.odin";
-import "posix.odin";
+import "posix/posix.odin";
 import "feature_test.odin";
 
 when ODIN_OS == "windows" {
 	import win32 "core:sys/windows.odin";
 	foreign_system_library "kernel32.lib";
 	foreign kernel32 {
-		_get_current_directory :: proc(buf_len: u32, buf: ^u8) #link_name "GetCurrentDirectoryA" ---;
-		_create_directory :: proc(^u8, rawptr) -> i32          #link_name "CreateDirectoryA" ---;        
+		_get_current_directory :: proc(buf_len: u32, buf: ^u8) #cc_std #link_name "GetCurrentDirectoryA" ---;
+		_create_directory :: proc(^u8, rawptr) -> i32          #cc_std #link_name "CreateDirectoryA" ---;        
+		get_module_filename :: proc() -> i32           #cc_std #link_name "GetLastError"  ---;
+
 	}
 } else {
-	foreign_system_library libc "c";
-	foreign libc {
-		_unix_getcwd :: proc(buf: ^u8, size: i64) -> ^u8        #link_name "getcwd" ---;
-		_unix_closedir :: proc(^_DIR) -> i32                    #link_name "closedir" ---;
-		_unix_chdir :: proc(^u8) -> i32                         #link_name "chdir" ---;
-		//_unix_open  :: proc(^u8, int, posix.mode) -> os.Handle  #link_name "open" ---;
-		_unix_mkdir :: proc(^u8, posix.mode) -> i32             #link_name "mkdir" ---;
-	}
-	
-	// A gross hack because the function signature in os_linux.odin and os_x.odin are wrong.
-	_unix_open :: proc(path: ^u8, mode: int, perms: posix.mode) -> os.Handle #inline {
-		when feature_test.APPLE {
-			return (cast(proc(^u8, int, #c_vararg ...posix.mode) -> os.Handle #cc_c)os.unix_open)(path, mode, perms);
-		} else {
-			return (cast(proc(^u8, int, #c_vararg ...posix.mode) -> os.Handle #cc_c)os._unix_open)(path, mode, perms);
-		}
-	}
-
-	when ODIN_OS == "linux" {
-		foreign libc {
-			_unix_readdir :: proc(^_DIR) -> ^_dirent #cc_c #link_name "readdir64" ---;
-		}
-	} else when ODIN_OS == "osx" {
-		foreign libc {
-			_unix_readdir :: proc(^_DIR) -> ^_dirent #cc_c #link_name "readdir$INODE64" ---;
-		}
-	} else {
-		foreign libc {
-			_unix_readdir :: proc(^_DIR) -> ^_dirent #cc_c #link_name "readdir" ---;
-		}
-	}
-	when ODIN_OS == "osx" {
-		foreign libc {
-			// NOTE(zachary): For backwards compat with 32-bit binaries,
-			//   Apple has an $INODE64 postfix on the `stat` family of functions.
-			_unix_stat    :: proc(path: ^u8, stat: ^posix.Stat) -> int  #link_name "stat$INODE64" ---;
-			_unix_opendir :: proc(path: ^u8) -> ^_DIR                   #link_name "opendir$INODE64" ---;
-		}
-	} else {
-		foreign libc {
-			// NOTE(zachary): IOS/WatchOS/TVOS don't have this backwards-compatability.
-			_unix_opendir :: proc(path: ^u8) -> ^_DIR                   #link_name "opendir" ---;
-		}
-		_unix_stat :: proc(path: ^u8, stat: ^posix.Stat) -> int #inline {
-			when feature_test.APPLE {
-				return cast(int)os.unix_stat(path, cast(^os.Stat)stat);
-			} else {
-				return cast(int)os._unix_stat(path, cast(^os.Stat)stat);
-			}
-		}
-	}
-
-	_Dirent_Type :: enum u8 {
-		DT_UNKNOWN  = 0,
-		DT_FIFO     = 1,
-		DT_CHR      = 2,
-		DT_DIR      = 4,
-		DT_BLK      = 6,
-		DT_REG      = 8,
-		DT_LNK      = 10,
-		DT_SOCK     = 12,
-		DT_WHT      = 14
-	}
-
-	when ODIN_OS == "linux" {
-		_dirent :: struct #ordered {
-			inode: posix.ino;
-			off: posix.off;
-			reclen: u16;
-			kind: _Dirent_Type;
-			name: [256]u8;
-		}
-	} else {
-		_dirent :: struct #ordered {
-			inode: posix.ino;
-			seekoff: u64;
-			reclen: u16;
-			namlen: u16;
-			kind: _Dirent_Type;
-			name: [256]u8;
-		}
-	}
-
-	_DIR :: rawptr;
-
-	stat :: proc(path: string) -> (posix.Stat, int) #inline {
-		s: posix.Stat;
-		cstr := str.new_c_string(path);
-		defer free(cstr);
-		ret_int := _unix_stat(cstr, &s);
-		return s, int(ret_int);
-	}
 
 }
 
@@ -116,7 +27,7 @@ open :: proc(path: string, flags := os.O_WRONLY | os.O_TRUNC, perms: posix.mode 
 	} else {
 		cstr := str.new_c_string(path);
 		defer free(cstr);
-		handle := _unix_open(cstr, flags, perms);
+		handle := posix.unix_open(cstr, flags, perms);
 		return handle, (handle >= 0);
 	}
 }
@@ -164,7 +75,7 @@ mkdir :: proc(path: string, perms: posix.mode = _DEFAULT_PERMS) {
 	} else {
 		c_path := str.new_c_string(path);
 		defer(free(c_path));
-		_unix_mkdir(c_path, perms);
+		posix.unix_mkdir(c_path, perms);
 	}
 }
 
@@ -180,7 +91,7 @@ chdir :: proc(path: string) -> bool {
 
 	} else {
 
-		return _unix_chdir(c_path) == 0;
+		return posix.unix_chdir(c_path) == 0;
 	}
 }
 
@@ -198,17 +109,17 @@ list_dir :: proc(path: string) -> ([]string, bool) {
 		
 	} else {
 
-		dp := _unix_opendir(c_path);
+		dp := posix.unix_opendir(c_path);
 
 		if dp == nil do return nil, false;
 
-		defer((cast(proc(^_DIR))_unix_closedir)(dp));
+		defer((cast(proc(^posix.DIR))posix.unix_closedir)(dp));
 
 		paths : [dynamic]string;
 
-		ep := _unix_readdir(dp);
+		ep := posix.unix_readdir(dp);
 
-		for ;ep != nil; ep = _unix_readdir(dp) {
+		for ;ep != nil; ep = posix.unix_readdir(dp) {
 			child := str.to_odin_string(&ep.name[0]);
 			if child != "." && child != ".." do	append(&paths, child);
 		}
@@ -242,9 +153,8 @@ is_file :: proc(path: string) -> bool #inline {
 		return !is_directory(path);
 
 	} else {
-		info, ok := stat(path);
-		when ODIN_OS == "osx" {if !ok do return false;}
-		else {if ok != 0 do return false;}
+		info, err := posix.stat(path);
+		if err != 0 do return false;
 		return posix.S_ISREG(info.mode);
 	}
 }
@@ -259,9 +169,8 @@ is_directory :: proc(path: string) -> bool #inline {
 
 	} else {
 
-		info, ok := stat(path);
-		when ODIN_OS == "osx" {if !ok do return false;}
-		else {if ok != 0 do return false;}
+		info, err := posix.stat(path);
+		if err != 0 do return false;
 		return posix.S_ISDIR(info.mode);
 	}
 }
@@ -274,11 +183,62 @@ is_special :: proc(path: string) -> bool #inline {
 	when ODIN_OS == "windows" {
 		return false;
 	} else {
-		info, ok := stat(path);
-		when ODIN_OS == "osx" {if !ok do return false;}
-		else {if ok != 0 do return false;}
+		info, err := posix.stat(path);
+		if err != 0 do return false;
 		return !(posix.S_ISREG(info.mode) || posix.S_ISDIR(info.mode));
 	}
+}
+
+// Allocates memory.
+read_link :: proc(path: string) -> (string, bool) {
+
+	when OS_FAMILY == "microsoft" {
+
+		// Dupes the string so that you can free the return value safely.
+		return str.dup(path);
+
+	} else {
+
+		if link_info, err := posix.lstat(path); err == 0 {
+
+			buf := make([]u8, link_info.size);
+			err = cast(type_of(err))posix.unix_readlink(&path[0], &buf[0], cast(size_t)link_info.size);
+			if err == 0 do return string(buf), true;
+			free(buf);
+		}
+
+		return "", false;
+	}
+}
+
+// Returns the directory the current program's binary file is in.
+// Allocates memory.
+get_binary_path :: proc() -> (string, bool) {
+
+	when ODIN_OS == "osx" {
+		
+		size : u32;
+		os.NSGetExecutablePath(nil, &size);
+		if size == 0 do return "", false;
+		buf := make([]u8, size);
+		defer free(buf);
+		os.NSGetExecutablePath(&buf[0], &size);
+
+		abs_path := posix.unix_realpath(&buf[0], nil);
+		defer os.heap_free(abs_path);
+
+		return str.dup(str.to_odin_string(abs_path)), true;
+
+	} else when OS_FAMILY == "linux" {
+		return read_link("/proc/self/exe");
+	} else when OS_FAMILY == "microsoft" {
+		_ := compile_assert(false, "TODO");
+	} else when OS_FAMILY == "bsd" {
+		_ := compile_assert(false, "TODO");
+	} else {
+		_ := compile_assert(false, "Unsupported OS");
+	}
+	return "", false;
 }
 
 // Returns the current working directory.
@@ -317,7 +277,7 @@ cwd :: proc() -> (string, bool) {
 
 		// This is non-compliant to the POSIX spec, but both Linux and BSD/macOS implement this.
 		// NOTE: Apparently Solaris does not, but I don't think that's really a target anyone uses anymore.
-		heap_cwd := _unix_getcwd(nil, 0);
+		heap_cwd := posix.unix_getcwd(nil, 0);
 		// We want to free this result instead of returning it so that all return values are allocated
 		// with the proper allocator.
 		defer(os.heap_free(heap_cwd));

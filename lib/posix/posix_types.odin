@@ -1,3 +1,4 @@
+using import "../TEMP.odin";
 using import "core:c.odin";
 import "../feature_test.odin";
 
@@ -29,7 +30,7 @@ when feature_test.LINUX_WIN && feature_test.IS_INTEL {
 	ssize :: c_long;
 	time :: c_long;
 	blkcnt64 :: i64;
-} else when feature_test.APPLE {
+} else when OS_FAMILY == "apple" {
 	blkcnt :: i64;
 	blksize :: i32;
 	dev :: i32;
@@ -51,14 +52,14 @@ else {
 when feature_test.IS_64 {
 	Nanosecond :: i64;
 	Time_Spec :: struct #ordered {
-		seconds:     i64;
-		nanoseconds: Nanosecond;
+		seconds:     i64,
+		nanoseconds: Nanosecond,
 	}
 } else {
 	Nanosecond :: i32;
 	Time_Spec :: struct #ordered {
-		seconds:     i32;
-		nanoseconds: Nanosecond;
-		_reserved:   i32;
+		seconds:     i32,
+		nanoseconds: Nanosecond,
+		_reserved:   i32,
 	}
 }

@@ -54,3 +54,19 @@ trim :: proc(s: string) -> string {
 	}
 	return s;
 }
+
+// Splits the first string by the second.
+// Note that "a,,b" split by "," will give ["a","b"] not ["a","","b"]
+split :: proc(haystack, needle: string) -> []string {
+	assert(len(haystack)>0);
+	assert(len(haystack)>len(needle));
+	assert(len(needle)>0);
+	strs: [dynamic]string;
+	last_start := 0;
+	for i := 0; i < len(haystack); i += 1 {
+		is_match := bool;
+		for j := 0; j < len(needle); j += 1 {
+
+		}
+	}
+}

@@ -21,16 +21,16 @@ Value_Type :: enum {
 // The basic value type. Make sure to check the kind first!
 Value :: struct {
 	using data: struct #raw_union {
-		str: string;
-		object: map[string]^Value;
-		arr: [dynamic]^Value;
-		float: f64;
-		integer: i128;
-		boolean: bool;
-	};
-	keystore: [dynamic]string;
-	kind: Value_Type;
-	x, y: int;
+		str: string,
+		object: map[string]^Value,
+		arr: [dynamic]^Value,
+		float: f64,
+		integer: i128,
+		boolean: bool,
+	},
+	keystore: [dynamic]string,
+	kind: Value_Type,
+	x, y: int,
 }
 
 // Used to denote which error occured
@@ -40,8 +40,8 @@ Error_Code :: enum u8 {
 
 // Always returned. To check if there's a true error, do `if err.code == json.Error_Code.NO_ERROR`
 Error :: struct {
-	code: Error_Code;
-	x, y: int;
+	code: Error_Code,
+	x, y: int,
 }
 
 // PUBLIC API
@@ -247,8 +247,8 @@ _write_value :: proc(val: ^Value, ind: int, buf: ^[dynamic]u8) {
 }
 
 _Parser :: struct {
-	file: string;
-	pos, x, y: int;
+	file: string,
+	pos, x, y: int,
 }
 
 _skip_whitespace :: proc(using parser: ^_Parser) -> Error {
