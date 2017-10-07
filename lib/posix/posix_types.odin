@@ -1,4 +1,3 @@
-using import "../TEMP.odin";
 using import "core:c.odin";
 import "../feature_test.odin";
 
@@ -30,7 +29,7 @@ when feature_test.LINUX_WIN && feature_test.IS_INTEL {
 	ssize :: c_long;
 	time :: c_long;
 	blkcnt64 :: i64;
-} else when OS_FAMILY == "apple" {
+} else when feature_test.APPLE {
 	blkcnt :: i64;
 	blksize :: i32;
 	dev :: i32;

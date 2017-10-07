@@ -55,18 +55,40 @@ trim :: proc(s: string) -> string {
 	return s;
 }
 
+import "core:fmt.odin";
+
 // Splits the first string by the second.
 // Note that "a,,b" split by "," will give ["a","b"] not ["a","","b"]
-split :: proc(haystack, needle: string) -> []string {
+split :: proc(haystack, needle: string) -> [dynamic]string {
+
 	assert(len(haystack)>0);
 	assert(len(haystack)>len(needle));
 	assert(len(needle)>0);
+
 	strs: [dynamic]string;
 	last_start := 0;
-	for i := 0; i < len(haystack); i += 1 {
-		is_match := bool;
-		for j := 0; j < len(needle); j += 1 {
 
+	for i := 0; i < len(haystack); i+=1 {
+
+		is_match : bool = true;
+
+		for j := 0; j < len(needle); j += 1 {
+			if haystack[i+j] != needle[j] {
+				is_match = false;
+				break;
+			}
+		}
+
+		if is_match {
+			slice := haystack[last_start..i];
+			if len(slice) > 0 do append(&strs, slice);
+			i += len(needle) - 1;
+			last_start = i + 1;
 		}
 	}
+
+	slice := haystack[last_start..len(haystack)];
+	if len(slice) > 0 do append(&strs, slice);
+
+	return strs;
 }

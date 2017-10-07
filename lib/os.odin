@@ -1,13 +1,10 @@
-// Temporarily setting this
-using import "TEMP.odin";
+import "feature_test.odin";
 export "core:os.odin";
 
-when OS_FAMILY == "apple" {
-	export "apple/os.odin";
-} else when OS_FAMILY == "linux" {
-	export "linux/os.odin";
-} else when OS_FAMILY == "bsd" {
-	export "bsd/os.odin";
-} else when OS_FAMILY == "microsoft" {
-	export "microsoft/os.odin";
+when      feature_test.APPLE     { export "apple/os.odin"     }
+else when feature_test.LINUX     { export "linux/os.odin"     }
+else when feature_test.BSD       { export "bsd/os.odin"       }
+else when feature_test.MICROSOFT { export "microsoft/os.odin" }
+else {
+	_ := compile_assert(false, "Unsupported platform!");
 }

@@ -1,4 +1,3 @@
-using import "zext:TEMP.odin";
 import "os.odin";
 import "str.odin";
 import "posix/posix.odin";
@@ -9,8 +8,10 @@ when ODIN_OS == "windows" {
 	foreign_system_library "kernel32.lib";
 	foreign kernel32 {
 		_get_current_directory :: proc(buf_len: u32, buf: ^u8) #cc_std #link_name "GetCurrentDirectoryA" ---;
-		_create_directory :: proc(^u8, rawptr) -> i32          #cc_std #link_name "CreateDirectoryA" ---;        
-		get_module_filename :: proc() -> i32           #cc_std #link_name "GetLastError"  ---;
+		_create_directory :: proc(^u8, rawptr) -> i32          #cc_std #link_name "CreateDirectoryA" ---;
+
+		// What on earth was I trying to do here?
+		// get_module_filename :: proc() -> i32           #cc_std #link_name "GetLastError"  ---;
 
 	}
 } else {
@@ -192,7 +193,7 @@ is_special :: proc(path: string) -> bool #inline {
 // Allocates memory.
 read_link :: proc(path: string) -> (string, bool) {
 
-	when OS_FAMILY == "microsoft" {
+	when feature_test.MICROSOFT {
 
 		// Dupes the string so that you can free the return value safely.
 		return str.dup(path);
@@ -202,7 +203,7 @@ read_link :: proc(path: string) -> (string, bool) {
 		if link_info, err := posix.lstat(path); err == 0 {
 
 			buf := make([]u8, link_info.size);
-			err = cast(type_of(err))posix.unix_readlink(&path[0], &buf[0], cast(size_t)link_info.size);
+			err = cast(type_of(err))posix.unix_readlink(&path[0], &buf[0], cast(feature_test.size_t)link_info.size);
 			if err == 0 do return string(buf), true;
 			free(buf);
 		}
@@ -217,16 +218,34 @@ get_binary_path :: proc() -> (string, bool) {
 
 	when ODIN_OS == "osx" {
 		
+
+	fmt.println("A");
 		size : u32;
+
+	fmt.println("B");
 		os.NSGetExecutablePath(nil, &size);
+
+	fmt.println("C");
 		if size == 0 do return "", false;
+
+	fmt.println("D", size);
 		buf := make([]u8, size);
+
+	fmt.println("E");
 		defer free(buf);
+
+	fmt.println("F");
 		os.NSGetExecutablePath(&buf[0], &size);
 
+	fmt.println("G");
+
 		abs_path := posix.unix_realpath(&buf[0], nil);
+
+	fmt.println("H");
 		defer os.heap_free(abs_path);
 
+
+	fmt.println("I");
 		return str.dup(str.to_odin_string(abs_path)), true;
 
 	} else when OS_FAMILY == "linux" {

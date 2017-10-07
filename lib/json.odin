@@ -159,7 +159,7 @@ _append_escaped_string :: proc(buf: ^[dynamic]u8, str: string) {
 		if escape {
 			c: rune;
 
-			match char {
+			switch char {
 			// @todo: support escaped newline
 			case 'n': c = '\n';
 			case 'r': c = '\r';
@@ -170,7 +170,7 @@ _append_escaped_string :: proc(buf: ^[dynamic]u8, str: string) {
 			_append_rune(buf, c);
 			escape = false;
 		} else {
-			match char {
+			switch char {
 			// @todo: err if quotes not on ends of string
 			case '\\': escape = true;
 			case '"':  continue;
@@ -185,7 +185,7 @@ _indent :: proc(buf: ^[dynamic]u8, ind: int) #inline {
 }
 
 _write_value :: proc(val: ^Value, ind: int, buf: ^[dynamic]u8) {
-	match val.kind {
+	switch val.kind {
 		case Value_Type.STRING: {
 			append(buf, '"');
 			_append_escaped_string(buf, val.str);
@@ -522,7 +522,7 @@ _parse_string :: proc(using parser: ^_Parser) -> (^Value, Error) {
 			if(cc == '\\') {
 				x += 1;
 				pos += 1;
-				match(nc) {
+				switch nc {
 					case 'b': append(&dynstr, '\b');
 					case 'f': append(&dynstr, '\f');
 					case 'n': append(&dynstr, '\n');

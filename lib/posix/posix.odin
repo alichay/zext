@@ -1,4 +1,3 @@
-using import "zext:TEMP.odin";
 import "core:os.odin";
 import "../feature_test.odin";
 import "../str.odin";
@@ -15,17 +14,13 @@ when ODIN_OS != "windows" {
 		unix_chdir :: proc(path: ^u8) -> i32                   #link_name "chdir" ---;
 		//unix_open  :: proc(^u8, int, mode) -> os.Handle        #link_name "open" ---;
 		unix_mkdir :: proc(path: ^u8, perms: mode) -> i32      #link_name "mkdir" ---;
-		unix_readlink :: proc(path, out_buf: ^u8, buf_size: size_t) -> ssize_t #link_name "readlink" ---;
+		unix_readlink :: proc(path, out_buf: ^u8, buf_size: feature_test.size_t) -> feature_test.ssize_t #link_name "readlink" ---;
 		unix_realpath :: proc(in_buf, out_buf: ^u8) -> ^u8     #link_name "realpath" ---;
 	}
 	
 	// A gross hack because the function signature in os_linux.odin and os_x.odin are wrong.
 	unix_open :: proc(path: ^u8, access_mode: int, perms: mode) -> os.Handle #inline {
-		when feature_test.APPLE {
-			return (cast(proc(^u8, int, #c_vararg ...mode) -> os.Handle #cc_c)os.unix_open)(path, access_mode, perms);
-		} else {
-			return (cast(proc(^u8, int, #c_vararg ...mode) -> os.Handle #cc_c)os._unix_open)(path, access_mode, perms);
-		}
+		return (cast(proc(^u8, int, #c_vararg ...mode) -> os.Handle #cc_c)os._unix_open)(path, access_mode, perms);
 	}
 
 	when ODIN_OS == "linux" {

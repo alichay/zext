@@ -1,4 +1,5 @@
 import "zext:fs.odin";
+import "core:fmt.odin";
 
 main :: proc() {
 
