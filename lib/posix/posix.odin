@@ -9,52 +9,52 @@ when ODIN_OS != "windows" {
 
 	foreign_system_library libc "c";
 	foreign libc {
-		unix_getcwd :: proc(buf: ^u8, size: i64) -> ^u8        #link_name "getcwd" ---;
-		unix_closedir :: proc(handle: ^DIR) -> i32             #link_name "closedir" ---;
-		unix_chdir :: proc(path: ^u8) -> i32                   #link_name "chdir" ---;
-		//unix_open  :: proc(^u8, int, mode) -> os.Handle        #link_name "open" ---;
-		unix_mkdir :: proc(path: ^u8, perms: mode) -> i32      #link_name "mkdir" ---;
-		unix_readlink :: proc(path, out_buf: ^u8, buf_size: feature_test.size_t) -> feature_test.ssize_t #link_name "readlink" ---;
-		unix_realpath :: proc(in_buf, out_buf: ^u8) -> ^u8     #link_name "realpath" ---;
+		getcwd :: proc(buf: ^u8, size: i64) -> ^u8        #link_name "getcwd" ---;
+		closedir :: proc(handle: ^DIR) -> i32             #link_name "closedir" ---;
+		chdir :: proc(path: ^u8) -> i32                   #link_name "chdir" ---;
+		//open  :: proc(^u8, int, mode) -> os.Handle        #link_name "open" ---;
+		mkdir :: proc(path: ^u8, perms: mode) -> i32      #link_name "mkdir" ---;
+		readlink :: proc(path, out_buf: ^u8, buf_size: feature_test.size_t) -> feature_test.ssize_t #link_name "readlink" ---;
+		realpath :: proc(in_buf, out_buf: ^u8) -> ^u8     #link_name "realpath" ---;
 	}
 	
 	// A gross hack because the function signature in os_linux.odin and os_x.odin are wrong.
-	unix_open :: proc(path: ^u8, access_mode: int, perms: mode) -> os.Handle #inline {
+	open :: proc(path: ^u8, access_mode: int, perms: mode) -> os.Handle #inline {
 		return (cast(proc(^u8, int, #c_vararg ...mode) -> os.Handle #cc_c)os._unix_open)(path, access_mode, perms);
 	}
 
 	when ODIN_OS == "linux" {
 		foreign libc {
-			unix_readdir :: proc(^DIR) -> ^dirent #cc_c           #link_name "readdir64" ---;
-			unix_fstat   :: proc(fd: i32, stat: ^Stat) -> int     #link_name "fstat64"   ---;
-			unix_lstat   :: proc(path: ^u8, stat: ^Stat) -> int   #link_name "lstat64"   ---;
-			unix_stat    :: proc(path: ^u8, stat: ^Stat) -> int   #link_name "stat64"    ---;
+			readdir :: proc(^DIR) -> ^dirent #cc_c            #link_name "readdir64" ---;
+			_fstat   :: proc(fd: i32, stat: ^Stat) -> int     #link_name "fstat64"   ---;
+			_lstat   :: proc(path: ^u8, stat: ^Stat) -> int   #link_name "lstat64"   ---;
+			_stat    :: proc(path: ^u8, stat: ^Stat) -> int   #link_name "stat64"    ---;
 		}
 	} else when ODIN_OS == "osx" {
 		foreign libc {
-			unix_readdir :: proc(^DIR) -> ^dirent #cc_c          #link_name "readdir$INODE64" ---;
-			unix_fstat   :: proc(fd: i32, stat: ^Stat) -> int    #link_name "fstat$INODE64"   ---;
-			unix_lstat   :: proc(path: ^u8, stat: ^Stat) -> int  #link_name "lstat$INODE64"   ---;
-			unix_stat    :: proc(path: ^u8, stat: ^Stat) -> int  #link_name "stat$INODE64"    ---;
+			readdir :: proc(^DIR) -> ^dirent #cc_c           #link_name "readdir$INODE64" ---;
+			_fstat   :: proc(fd: i32, stat: ^Stat) -> int    #link_name "fstat$INODE64"   ---;
+			_lstat   :: proc(path: ^u8, stat: ^Stat) -> int  #link_name "lstat$INODE64"   ---;
+			_stat    :: proc(path: ^u8, stat: ^Stat) -> int  #link_name "stat$INODE64"    ---;
 		}
 	} else {
 		foreign libc {
-			unix_readdir :: proc(^DIR) -> ^dirent #cc_c           #link_name "readdir" ---;
-			unix_fstat   :: proc(fd: i32, stat: ^Stat) -> int     #link_name "fstat"   ---;
-			unix_lstat   :: proc(path: ^u8, stat: ^Stat) -> int   #link_name "lstat"   ---;
+			readdir :: proc(^DIR) -> ^dirent #cc_c            #link_name "readdir" ---;
+			_fstat   :: proc(fd: i32, stat: ^Stat) -> int     #link_name "fstat"   ---;
+			_lstat   :: proc(path: ^u8, stat: ^Stat) -> int   #link_name "lstat"   ---;
 		}
-		unix_stat :: proc(path: ^u8, stat: ^Stat) -> int #inline do return cast(int)os._unix_stat(path, stat);
+		_stat :: proc(path: ^u8, stat: ^Stat) -> int #inline do return cast(int)os._unix_stat(path, stat);
 	}
 	when ODIN_OS == "osx" {
 		foreign libc {
 			// NOTE(zachary): For backwards compat with 32-bit binaries,
 			//   Apple has an $INODE64 postfix on the `stat` family of functions.
-			unix_opendir :: proc(path: ^u8) -> ^DIR                   #link_name "opendir$INODE64" ---;
+			opendir :: proc(path: ^u8) -> ^DIR                #link_name "opendir$INODE64" ---;
 		}
 	} else {
 		foreign libc {
 			// NOTE(zachary): IOS/WatchOS/TVOS don't have this backwards-compatability.
-			unix_opendir :: proc(path: ^u8) -> ^DIR                   #link_name "opendir" ---;
+			opendir :: proc(path: ^u8) -> ^DIR                #link_name "opendir" ---;
 		}
 	}
 

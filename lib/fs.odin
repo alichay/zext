@@ -28,7 +28,7 @@ open :: proc(path: string, flags := os.O_WRONLY | os.O_TRUNC, perms: posix.mode 
 	} else {
 		cstr := str.new_c_string(path);
 		defer free(cstr);
-		handle := posix.unix_open(cstr, flags, perms);
+		handle := posix.open(cstr, flags, perms);
 		return handle, (handle >= 0);
 	}
 }
@@ -68,6 +68,10 @@ file_size :: proc(fd: os.Handle) -> (i64, bool) #inline {
 	return rv, err == 0;
 }
 
+read_entire_file :: proc(path: string) -> (data: []u8, success: bool) #inline {
+	return os.read_entire_file(path);
+}
+
 mkdir :: proc(path: string, perms: posix.mode = _DEFAULT_PERMS) {
 	parent := parent_name(path);
 	if !exists(parent) do mkdir(parent, perms);
@@ -76,7 +80,7 @@ mkdir :: proc(path: string, perms: posix.mode = _DEFAULT_PERMS) {
 	} else {
 		c_path := str.new_c_string(path);
 		defer(free(c_path));
-		posix.unix_mkdir(c_path, perms);
+		posix.mkdir(c_path, perms);
 	}
 }
 
@@ -92,7 +96,7 @@ chdir :: proc(path: string) -> bool {
 
 	} else {
 
-		return posix.unix_chdir(c_path) == 0;
+		return posix.chdir(c_path) == 0;
 	}
 }
 
@@ -110,17 +114,17 @@ list_dir :: proc(path: string) -> ([]string, bool) {
 		
 	} else {
 
-		dp := posix.unix_opendir(c_path);
+		dp := posix.opendir(c_path);
 
 		if dp == nil do return nil, false;
 
-		defer((cast(proc(^posix.DIR))posix.unix_closedir)(dp));
+		defer((cast(proc(^posix.DIR))posix.closedir)(dp));
 
 		paths : [dynamic]string;
 
-		ep := posix.unix_readdir(dp);
+		ep := posix.readdir(dp);
 
-		for ;ep != nil; ep = posix.unix_readdir(dp) {
+		for ;ep != nil; ep = posix.readdir(dp) {
 			child := str.to_odin_string(&ep.name[0]);
 			if child != "." && child != ".." do	append(&paths, child);
 		}
@@ -203,7 +207,7 @@ read_link :: proc(path: string) -> (string, bool) {
 		if link_info, err := posix.lstat(path); err == 0 {
 
 			buf := make([]u8, link_info.size);
-			err = cast(type_of(err))posix.unix_readlink(&path[0], &buf[0], cast(feature_test.size_t)link_info.size);
+			err = cast(type_of(err))posix.readlink(&path[0], &buf[0], cast(feature_test.size_t)link_info.size);
 			if err == 0 do return string(buf), true;
 			free(buf);
 		}
@@ -239,7 +243,7 @@ get_binary_path :: proc() -> (string, bool) {
 
 	fmt.println("G");
 
-		abs_path := posix.unix_realpath(&buf[0], nil);
+		abs_path := posix.realpath(&buf[0], nil);
 
 	fmt.println("H");
 		defer os.heap_free(abs_path);
@@ -296,7 +300,7 @@ cwd :: proc() -> (string, bool) {
 
 		// This is non-compliant to the POSIX spec, but both Linux and BSD/macOS implement this.
 		// NOTE: Apparently Solaris does not, but I don't think that's really a target anyone uses anymore.
-		heap_cwd := posix.unix_getcwd(nil, 0);
+		heap_cwd := posix.getcwd(nil, 0);
 		// We want to free this result instead of returning it so that all return values are allocated
 		// with the proper allocator.
 		defer(os.heap_free(heap_cwd));
