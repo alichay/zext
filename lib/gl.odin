@@ -62,7 +62,7 @@ when feature_test.MICROSOFT {
 
 } else when feature_test.APPLE {
 
-	import cf "zext:apple/core_foundation.odin";
+	import cf "zext:sys/apple/core_foundation.odin";
 
 	gl_framework: cf.Bundle_Ref;
 

@@ -1,6 +1,5 @@
 import "core:strings.odin";
 import "core:os.odin";
-import "posix.odin";
 import "core:fmt.odin";
 import "core:mem.odin";
 
@@ -12,6 +11,7 @@ when ODIN_OS == "windows" {
 		//_get_current_directory :: proc(buf_len: u32, buf: ^u8) #cc_std #link_name "GetCurrentDirectoryA" ---;
 	}
 } else {
+	import "sys/posix/posix.odin";
 	foreign_system_library libc "c";
 	foreign libc {
 		_fork    :: proc() -> posix.pid                      #cc_c #link_name "fork"      ---;

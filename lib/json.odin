@@ -1,7 +1,7 @@
 import strings "str.odin";
 import "core:raw.odin";
 import "core:fmt.odin";
-import "core:os.odin";
+import "os.odin";
 import "core:strconv.odin";
 import "core:utf8.odin";
 import "core:utf16.odin";

@@ -1,6 +1,5 @@
 import "os.odin";
 import "str.odin";
-import "posix/posix.odin";
 import "feature_test.odin";
 
 when ODIN_OS == "windows" {
@@ -15,7 +14,7 @@ when ODIN_OS == "windows" {
 
 	}
 } else {
-
+	import "sys/posix/posix.odin";
 }
 
 _DEFAULT_PERMS :: posix.S_IRUSR | posix.S_IWUSR | posix.S_IRGRP | posix.S_IWGRP | posix.S_IROTH | posix.S_IWOTH;
