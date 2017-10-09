@@ -3,7 +3,7 @@
 
 foreign_system_library cf "-fCoreFoundation";
 using import "core:c.odin";
-import "../str.odin";
+import "../../str.odin";
 
 // NOTE: This is nowhere fully fleshed out.
 //       As this is a massive library with a lot of
