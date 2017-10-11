@@ -1,6 +1,6 @@
 import "os.odin";
 import "str.odin";
-import "feature_test.odin";
+using import "feature_test.odin";
 
 when ODIN_OS == "windows" {
 	import win32 "core:sys/windows.odin";
@@ -70,6 +70,15 @@ file_size :: proc(fd: os.Handle) -> (i64, bool) #inline {
 read_entire_file :: proc(path: string) -> (data: []u8, success: bool) #inline {
 	return os.read_entire_file(path);
 }
+
+read_file_to_string :: proc(path: string) -> (data: string, success: bool) #inline {
+	buffer, success := os.read_entire_file(path);
+	if(!success) {
+		return "", false;
+	}
+	return string(buffer), true;
+}
+
 
 mkdir :: proc(path: string, perms: posix.mode = _DEFAULT_PERMS) {
 	parent := parent_name(path);
@@ -219,7 +228,7 @@ read_link :: proc(path: string) -> (string, bool) {
 // Allocates memory.
 get_binary_path :: proc() -> (string, bool) {
 
-	when ODIN_OS == "osx" {
+	when APPLE {
 		
 
 	fmt.println("A");
@@ -251,11 +260,11 @@ get_binary_path :: proc() -> (string, bool) {
 	fmt.println("I");
 		return str.dup(str.to_odin_string(abs_path)), true;
 
-	} else when OS_FAMILY == "linux" {
+	} else when LINUX {
 		return read_link("/proc/self/exe");
-	} else when OS_FAMILY == "microsoft" {
+	} else when MICROSOFT {
 		_ := compile_assert(false, "TODO");
-	} else when OS_FAMILY == "bsd" {
+	} else when BSD {
 		_ := compile_assert(false, "TODO");
 	} else {
 		_ := compile_assert(false, "Unsupported OS");

@@ -1,5 +1,5 @@
 import posix "posix_types.odin";
-import "../feature_test.odin";
+import "../../feature_test.odin";
 
 S_IFMT   : posix.mode : 0o0170000;
 S_IFBLK  : posix.mode : 0o0060000;

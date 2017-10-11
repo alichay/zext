@@ -1,6 +1,6 @@
 import "core:os.odin";
-import "../feature_test.odin";
-import "../str.odin";
+import "../../feature_test.odin";
+import "../../str.odin";
 
 when ODIN_OS != "windows" {
 	// TODO: Perhaps emulate POSIX calls on Windows?
@@ -93,21 +93,21 @@ when ODIN_OS != "windows" {
 
 	fstat :: proc(fd: i32) -> (Stat, int) #inline {
 		s: Stat;
-		ret_int := unix_fstat(fd, &s);
+		ret_int := _fstat(fd, &s);
 		return s, int(ret_int);
 	}
 	lstat :: proc(path: string) -> (Stat, int) #inline {
 		s: Stat;
 		cstr := str.new_c_string(path);
 		defer free(cstr);
-		ret_int := unix_lstat(cstr, &s);
+		ret_int := _lstat(cstr, &s);
 		return s, int(ret_int);
 	}
 	stat :: proc(path: string) -> (Stat, int) #inline {
 		s: Stat;
 		cstr := str.new_c_string(path);
 		defer free(cstr);
-		ret_int := unix_stat(cstr, &s);
+		ret_int := _stat(cstr, &s);
 		return s, int(ret_int);
 	}
 }

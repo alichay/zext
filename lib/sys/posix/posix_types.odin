@@ -1,5 +1,5 @@
 using import "core:c.odin";
-import "../feature_test.odin";
+import "../../feature_test.odin";
 
 when feature_test.LINUX_WIN && feature_test.IS_INTEL {
 	blkcnt :: c_long;
