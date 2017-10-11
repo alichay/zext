@@ -145,8 +145,8 @@ tex_parameter_f:          proc(target: u32, pname: u32, param: f32)             
 tex_parameter_fv:         proc(target: u32, pname: u32, params: ^f32)                                                                                       #cc_c;
 tex_parameter_i:          proc(target: u32, pname: u32, param: i32)                                                                                         #cc_c;
 tex_parameter_iv:         proc(target: u32, pname: u32, params: ^i32)                                                                                       #cc_c;
-tex_image1_d:             proc(target: u32, level: i32, internalformat: i32, width: i32, border: i32, format: u32, type_: u32, pixels: rawptr)              #cc_c;
-tex_image2_d:             proc(target: u32, level: i32, internalformat: i32, width: i32, height: i32, border: i32, format: u32, type_: u32, pixels: rawptr) #cc_c;
+tex_image_1d:             proc(target: u32, level: i32, internalformat: i32, width: i32, border: i32, format: u32, type_: u32, pixels: rawptr)              #cc_c;
+tex_image_2d:             proc(target: u32, level: i32, internalformat: i32, width: i32, height: i32, border: i32, format: u32, type_: u32, pixels: rawptr) #cc_c;
 draw_buffer:             proc(buf: u32)                                                                                                                    #cc_c;
 clear:                  proc(mask: u32)                                                                                                                   #cc_c;
 clear_color:             proc(red: f32, green: f32, blue: f32, alpha: f32)                                                                                 #cc_c;
@@ -195,8 +195,8 @@ load_1_0 :: proc() {
 	_set_proc_address(&tex_parameter_fv,         "glTexParameterfv\x00");
 	_set_proc_address(&tex_parameter_i,          "glTexParameteri\x00");
 	_set_proc_address(&tex_parameter_iv,         "glTexParameteriv\x00");
-	_set_proc_address(&tex_image1_d,             "glTexImage1D\x00");
-	_set_proc_address(&tex_image2_d,             "glTexImage2D\x00");
+	_set_proc_address(&tex_image_1d,             "glTexImage1D\x00");
+	_set_proc_address(&tex_image_2d,             "glTexImage2D\x00");
 	_set_proc_address(&draw_buffer,             "glDrawBuffer\x00");
 	_set_proc_address(&clear,                  "glClear\x00");
 	_set_proc_address(&clear_color,             "glClearColor\x00");
@@ -239,12 +239,12 @@ load_1_0 :: proc() {
 draw_arrays:        proc(mode: u32, first: i32, count: i32)                                                                                     #cc_c;
 draw_elements:      proc(mode: u32, count: i32, type_: u32, indices: rawptr)                                                                    #cc_c;
 polygon_offset:     proc(factor: f32, units: f32)                                                                                               #cc_c;
-copy_tex_image1_d:    proc(target: u32, level: i32, internalformat: u32, x: i32, y: i32, width: i32, border: i32)                                 #cc_c;
-copy_tex_image2_d:    proc(target: u32, level: i32, internalformat: u32, x: i32, y: i32, width: i32, height: i32, border: i32)                    #cc_c;
-copy_tex_sub_image1_d: proc(target: u32, level: i32, xoffset: i32, x: i32, y: i32, width: i32)                                                     #cc_c;
-copy_tex_sub_image2_d: proc(target: u32, level: i32, xoffset: i32, yoffset: i32, x: i32, y: i32, width: i32, height: i32)                          #cc_c;
-tex_sub_image1_d:     proc(target: u32, level: i32, xoffset: i32, width: i32, format: u32, type_: u32, pixels: rawptr)                            #cc_c;
-tex_sub_image2_d:     proc(target: u32, level: i32, xoffset: i32, yoffset: i32, width: i32, height: i32, format: u32, type_: u32, pixels: rawptr) #cc_c;
+copy_tex_image_1d:    proc(target: u32, level: i32, internalformat: u32, x: i32, y: i32, width: i32, border: i32)                                 #cc_c;
+copy_tex_image_2d:    proc(target: u32, level: i32, internalformat: u32, x: i32, y: i32, width: i32, height: i32, border: i32)                    #cc_c;
+copy_tex_sub_image_1d: proc(target: u32, level: i32, xoffset: i32, x: i32, y: i32, width: i32)                                                     #cc_c;
+copy_tex_sub_image_2d: proc(target: u32, level: i32, xoffset: i32, yoffset: i32, x: i32, y: i32, width: i32, height: i32)                          #cc_c;
+tex_sub_image_1d:     proc(target: u32, level: i32, xoffset: i32, width: i32, format: u32, type_: u32, pixels: rawptr)                            #cc_c;
+tex_sub_image_2d:     proc(target: u32, level: i32, xoffset: i32, yoffset: i32, width: i32, height: i32, format: u32, type_: u32, pixels: rawptr) #cc_c;
 bind_texture:       proc(target: u32, texture: u32)                                                                                             #cc_c;
 delete_textures:    proc(n: i32, textures: ^u32)                                                                                                #cc_c;
 gen_textures:       proc(n: i32, textures: ^u32)                                                                                                #cc_c;
@@ -254,12 +254,12 @@ load_1_1 :: proc() {
 	_set_proc_address(&draw_arrays,        "glDrawArrays\x00");
 	_set_proc_address(&draw_elements,      "glDrawElements\x00");
 	_set_proc_address(&polygon_offset,     "glPolygonOffset\x00");
-	_set_proc_address(&copy_tex_image1_d,    "glCopyTexImage1D\x00");
-	_set_proc_address(&copy_tex_image2_d,    "glCopyTexImage2D\x00");
-	_set_proc_address(&copy_tex_sub_image1_d, "glCopyTexSubImage1D\x00");
-	_set_proc_address(&copy_tex_sub_image2_d, "glCopyTexSubImage2D\x00");
-	_set_proc_address(&tex_sub_image1_d,     "glTexSubImage1D\x00");
-	_set_proc_address(&tex_sub_image2_d,     "glTexSubImage2D\x00");
+	_set_proc_address(&copy_tex_image_1d,    "glCopyTexImage1D\x00");
+	_set_proc_address(&copy_tex_image_2d,    "glCopyTexImage2D\x00");
+	_set_proc_address(&copy_tex_sub_image_1d, "glCopyTexSubImage1D\x00");
+	_set_proc_address(&copy_tex_sub_image_2d, "glCopyTexSubImage2D\x00");
+	_set_proc_address(&tex_sub_image_1d,     "glTexSubImage1D\x00");
+	_set_proc_address(&tex_sub_image_2d,     "glTexSubImage2D\x00");
 	_set_proc_address(&bind_texture,       "glBindTexture\x00");
 	_set_proc_address(&delete_textures,    "glDeleteTextures\x00");
 	_set_proc_address(&gen_textures,       "glGenTextures\x00");
@@ -269,39 +269,39 @@ load_1_1 :: proc() {
 
 // VERSION_1_2
 draw_range_elements: proc(mode: u32, start: u32, end: u32, count: i32, type_: u32, indices: rawptr)                                                                        #cc_c;
-tex_image3_d:        proc(target: u32, level: i32, internalformat: i32, width: i32, height: i32, depth: i32, border: i32, format: u32, type_: u32, pixels: rawptr)         #cc_c;
-tex_sub_image3_d:     proc(target: u32, level: i32, xoffset: i32, yoffset: i32, zoffset: i32, width: i32, height: i32, depth: i32, format: u32, type_: u32, pixels: rawptr) #cc_c;
-copy_tex_sub_image3_d: proc(target: u32, level: i32, xoffset: i32, yoffset: i32, zoffset: i32, x: i32, y: i32, width: i32, height: i32)                                      #cc_c;
+tex_image_3d:        proc(target: u32, level: i32, internalformat: i32, width: i32, height: i32, depth: i32, border: i32, format: u32, type_: u32, pixels: rawptr)         #cc_c;
+tex_sub_image_3d:     proc(target: u32, level: i32, xoffset: i32, yoffset: i32, zoffset: i32, width: i32, height: i32, depth: i32, format: u32, type_: u32, pixels: rawptr) #cc_c;
+copy_tex_sub_image_3d: proc(target: u32, level: i32, xoffset: i32, yoffset: i32, zoffset: i32, x: i32, y: i32, width: i32, height: i32)                                      #cc_c;
 
 load_1_2 :: proc() {
 
 	_set_proc_address(&draw_range_elements, "glDrawRangeElements\x00");
-	_set_proc_address(&tex_image3_d,        "glTexImage3D\x00");
-	_set_proc_address(&tex_sub_image3_d,     "glTexSubImage3D\x00");
-	_set_proc_address(&copy_tex_sub_image3_d, "glCopyTexSubImage3D\x00");
+	_set_proc_address(&tex_image_3d,        "glTexImage3D\x00");
+	_set_proc_address(&tex_sub_image_3d,     "glTexSubImage3D\x00");
+	_set_proc_address(&copy_tex_sub_image_3d, "glCopyTexSubImage3D\x00");
 }
 
 
 // VERSION_1_3
 active_texture:           proc(texture: u32)                                                                                                                                      #cc_c;
 sample_coverage:          proc(value: f32, invert: u8)                                                                                                                            #cc_c;
-compressed_tex_image3_d:    proc(target: u32, level: i32, internalformat: u32, width: i32, height: i32, depth: i32, border: i32, imageSize: i32, data: rawptr)                      #cc_c;
-compressed_tex_image2_d:    proc(target: u32, level: i32, internalformat: u32, width: i32, height: i32, border: i32, imageSize: i32, data: rawptr)                                  #cc_c;
-compressed_tex_image1_d:    proc(target: u32, level: i32, internalformat: u32, width: i32, border: i32, imageSize: i32, data: rawptr)                                               #cc_c;
-compressed_tex_sub_image3_d: proc(target: u32, level: i32, xoffset: i32, yoffset: i32, zoffset: i32, width: i32, height: i32, depth: i32, format: u32, imageSize: i32, data: rawptr) #cc_c;
-compressed_tex_sub_image2_d: proc(target: u32, level: i32, xoffset: i32, yoffset: i32, width: i32, height: i32, format: u32, imageSize: i32, data: rawptr)                           #cc_c;
-compressed_tex_sub_image1_d: proc(target: u32, level: i32, xoffset: i32, width: i32, format: u32, imageSize: i32, data: rawptr)                                                      #cc_c;
+compressed_tex_image_3d:    proc(target: u32, level: i32, internalformat: u32, width: i32, height: i32, depth: i32, border: i32, imageSize: i32, data: rawptr)                      #cc_c;
+compressed_tex_image_2d:    proc(target: u32, level: i32, internalformat: u32, width: i32, height: i32, border: i32, imageSize: i32, data: rawptr)                                  #cc_c;
+compressed_tex_image_1d:    proc(target: u32, level: i32, internalformat: u32, width: i32, border: i32, imageSize: i32, data: rawptr)                                               #cc_c;
+compressed_tex_sub_image_3d: proc(target: u32, level: i32, xoffset: i32, yoffset: i32, zoffset: i32, width: i32, height: i32, depth: i32, format: u32, imageSize: i32, data: rawptr) #cc_c;
+compressed_tex_sub_image_2d: proc(target: u32, level: i32, xoffset: i32, yoffset: i32, width: i32, height: i32, format: u32, imageSize: i32, data: rawptr)                           #cc_c;
+compressed_tex_sub_image_1d: proc(target: u32, level: i32, xoffset: i32, width: i32, format: u32, imageSize: i32, data: rawptr)                                                      #cc_c;
 get_compressed_tex_image:   proc(target: u32, level: i32, img: rawptr)                                                                                                              #cc_c;
 
 load_1_3 :: proc() {
 	_set_proc_address(&active_texture,           "glActiveTexture\x00");
 	_set_proc_address(&sample_coverage,          "glSampleCoverage\x00");
-	_set_proc_address(&compressed_tex_image3_d,    "glCompressedTexImage3D\x00");
-	_set_proc_address(&compressed_tex_image2_d,    "glCompressedTexImage2D\x00");
-	_set_proc_address(&compressed_tex_image1_d,    "glCompressedTexImage1D\x00");
-	_set_proc_address(&compressed_tex_sub_image3_d, "glCompressedTexSubImage3D\x00");
-	_set_proc_address(&compressed_tex_sub_image2_d, "glCompressedTexSubImage2D\x00");
-	_set_proc_address(&compressed_tex_sub_image1_d, "glCompressedTexSubImage1D\x00");
+	_set_proc_address(&compressed_tex_image_3d,    "glCompressedTexImage3D\x00");
+	_set_proc_address(&compressed_tex_image_2d,    "glCompressedTexImage2D\x00");
+	_set_proc_address(&compressed_tex_image_1d,    "glCompressedTexImage1D\x00");
+	_set_proc_address(&compressed_tex_sub_image_3d, "glCompressedTexSubImage3D\x00");
+	_set_proc_address(&compressed_tex_sub_image_2d, "glCompressedTexSubImage2D\x00");
+	_set_proc_address(&compressed_tex_sub_image_1d, "glCompressedTexSubImage1D\x00");
 	_set_proc_address(&get_compressed_tex_image,   "glGetCompressedTexImage\x00");
 }
 
@@ -655,9 +655,9 @@ bind_framebuffer:                     proc(target: u32, framebuffer: u32)       
 delete_framebuffers:                  proc(n: i32, framebuffers: ^u32)                                                                                             #cc_c;
 gen_framebuffers:                     proc(n: i32, framebuffers: ^u32)                                                                                             #cc_c;
 check_framebuffer_status:              proc(target: u32) -> u32                                                                                                     #cc_c;
-framebuffer_texture1_d:                proc(target: u32, attachment: u32, textarget: u32, texture: u32, level: i32)                                                 #cc_c;
-framebuffer_texture2_d:                proc(target: u32, attachment: u32, textarget: u32, texture: u32, level: i32)                                                 #cc_c;
-framebuffer_texture3_d:                proc(target: u32, attachment: u32, textarget: u32, texture: u32, level: i32, zoffset: i32)                                   #cc_c;
+framebuffer_texture_1d:                proc(target: u32, attachment: u32, textarget: u32, texture: u32, level: i32)                                                 #cc_c;
+framebuffer_texture_2d:                proc(target: u32, attachment: u32, textarget: u32, texture: u32, level: i32)                                                 #cc_c;
+framebuffer_texture_3d:                proc(target: u32, attachment: u32, textarget: u32, texture: u32, level: i32, zoffset: i32)                                   #cc_c;
 framebuffer_renderbuffer:             proc(target: u32, attachment: u32, renderbuffertarget: u32, renderbuffer: u32)                                               #cc_c;
 get_framebuffer_attachment_parameter_iv: proc(target: u32, attachment: u32, pname: u32, params: ^i32)                                                                 #cc_c;
 generate_mipmap:                      proc(target: u32)                                                                                                            #cc_c;
@@ -741,9 +741,9 @@ load_3_0 :: proc() {
 	_set_proc_address(&delete_framebuffers,                  "glDeleteFramebuffers\x00");
 	_set_proc_address(&gen_framebuffers,                     "glGenFramebuffers\x00");
 	_set_proc_address(&check_framebuffer_status,              "glCheckFramebufferStatus\x00");
-	_set_proc_address(&framebuffer_texture1_d,                "glFramebufferTexture1D\x00");
-	_set_proc_address(&framebuffer_texture2_d,                "glFramebufferTexture2D\x00");
-	_set_proc_address(&framebuffer_texture3_d,                "glFramebufferTexture3D\x00");
+	_set_proc_address(&framebuffer_texture_1d,                "glFramebufferTexture1D\x00");
+	_set_proc_address(&framebuffer_texture_2d,                "glFramebufferTexture2D\x00");
+	_set_proc_address(&framebuffer_texture_3d,                "glFramebufferTexture3D\x00");
 	_set_proc_address(&framebuffer_renderbuffer,             "glFramebufferRenderbuffer\x00");
 	_set_proc_address(&get_framebuffer_attachment_parameter_iv, "glGetFramebufferAttachmentParameteriv\x00");
 	_set_proc_address(&generate_mipmap,                      "glGenerateMipmap\x00");
@@ -805,8 +805,8 @@ get_sync_iv:                       proc(sync: sync_t, pname: u32, bufSize: i32, 
 get_integer64i_v:                 proc(target: u32, index: u32, data: ^i64)                                                                           #cc_c;
 get_buffer_parameter_i64v:          proc(target: u32, pname: u32, params: ^i64)                                                                         #cc_c;
 framebuffer_texture:              proc(target: u32, attachment: u32, texture: u32, level: i32)                                                        #cc_c;
-tex_image2_d_multisample:           proc(target: u32, samples: i32, internalformat: u32, width: i32, height: i32, fixedsamplelocations: u8)             #cc_c;
-tex_image3_d_multisample:           proc(target: u32, samples: i32, internalformat: u32, width: i32, height: i32, depth: i32, fixedsamplelocations: u8) #cc_c;
+tex_image_2d_multisample:           proc(target: u32, samples: i32, internalformat: u32, width: i32, height: i32, fixedsamplelocations: u8)             #cc_c;
+tex_image_3d_multisample:           proc(target: u32, samples: i32, internalformat: u32, width: i32, height: i32, depth: i32, fixedsamplelocations: u8) #cc_c;
 get_multisample_fv:                proc(pname: u32, index: u32, val: ^f32)                                                                             #cc_c;
 sample_mask_i:                     proc(maskNumber: u32, mask: u32)                                                                                    #cc_c;
 
@@ -826,8 +826,8 @@ load_3_2 :: proc() {
 	_set_proc_address(&get_integer64i_v,                 "glGetInteger64i_v\x00");
 	_set_proc_address(&get_buffer_parameter_i64v,          "glGetBufferParameteri64v\x00");
 	_set_proc_address(&framebuffer_texture,              "glFramebufferTexture\x00");
-	_set_proc_address(&tex_image2_d_multisample,           "glTexImage2DMultisample\x00");
-	_set_proc_address(&tex_image3_d_multisample,           "glTexImage3DMultisample\x00");
+	_set_proc_address(&tex_image_2d_multisample,           "glTexImage2DMultisample\x00");
+	_set_proc_address(&tex_image_3d_multisample,           "glTexImage3DMultisample\x00");
 	_set_proc_address(&get_multisample_fv,                "glGetMultisamplefv\x00");
 	_set_proc_address(&sample_mask_i,                     "glSampleMaski\x00");
 }
@@ -1243,9 +1243,9 @@ get_internalformat_iv:                         proc(target: u32, internalformat:
 get_active_atomic_counter_buffer_iv:              proc(program: u32, bufferIndex: u32, pname: u32, params: ^i32)                                                   #cc_c;
 bind_image_texture:                            proc(unit: u32, texture: u32, level: i32, layered: u8, layer: i32, access: u32, format: u32)                     #cc_c;
 memory_barrier:                               proc(barriers: u32)                                                                                              #cc_c;
-tex_storage1_d:                                proc(target: u32, levels: i32, internalformat: u32, width: i32)                                                  #cc_c;
-tex_storage2_d:                                proc(target: u32, levels: i32, internalformat: u32, width: i32, height: i32)                                     #cc_c;
-tex_storage3_d:                                proc(target: u32, levels: i32, internalformat: u32, width: i32, height: i32, depth: i32)                         #cc_c;
+tex_storage_1d:                                proc(target: u32, levels: i32, internalformat: u32, width: i32)                                                  #cc_c;
+tex_storage_2d:                                proc(target: u32, levels: i32, internalformat: u32, width: i32, height: i32)                                     #cc_c;
+tex_storage_3d:                                proc(target: u32, levels: i32, internalformat: u32, width: i32, height: i32, depth: i32)                         #cc_c;
 draw_transform_feedback_instanced:              proc(mode: u32, id: u32, instancecount: i32)                                                                     #cc_c;
 draw_transform_feedback_stream_instanced:        proc(mode: u32, id: u32, stream: u32, instancecount: i32)                                                        #cc_c;
 
@@ -1257,9 +1257,9 @@ load_4_2 :: proc() {
 	_set_proc_address(&get_active_atomic_counter_buffer_iv,              "glGetActiveAtomicCounterBufferiv\x00");
 	_set_proc_address(&bind_image_texture,                            "glBindImageTexture\x00");
 	_set_proc_address(&memory_barrier,                               "glMemoryBarrier\x00");
-	_set_proc_address(&tex_storage1_d,                                "glTexStorage1D\x00");
-	_set_proc_address(&tex_storage2_d,                                "glTexStorage2D\x00");
-	_set_proc_address(&tex_storage3_d,                                "glTexStorage3D\x00");
+	_set_proc_address(&tex_storage_1d,                                "glTexStorage1D\x00");
+	_set_proc_address(&tex_storage_2d,                                "glTexStorage2D\x00");
+	_set_proc_address(&tex_storage_3d,                                "glTexStorage3D\x00");
 	_set_proc_address(&draw_transform_feedback_instanced,              "glDrawTransformFeedbackInstanced\x00");
 	_set_proc_address(&draw_transform_feedback_stream_instanced,        "glDrawTransformFeedbackStreamInstanced\x00");
 }
@@ -1289,8 +1289,8 @@ get_program_resource_location:      proc(program: u32, programInterface: u32, na
 get_program_resource_location_index: proc(program: u32, programInterface: u32, name: ^u8) -> i32                                                                                                                                                    #cc_c;
 shader_storage_block_binding:       proc(program: u32, storageBlockIndex: u32, storageBlockBinding: u32)                                                                                                                                           #cc_c;
 tex_buffer_range:                  proc(target: u32, internalformat: u32, buffer: u32, offset: int, size: int)                                                                                                                                    #cc_c;
-tex_storage2_d_multisample:         proc(target: u32, samples: i32, internalformat: u32, width: i32, height: i32, fixedsamplelocations: u8)                                                                                                        #cc_c;
-tex_storage3_d_multisample:         proc(target: u32, samples: i32, internalformat: u32, width: i32, height: i32, depth: i32, fixedsamplelocations: u8)                                                                                            #cc_c;
+tex_storage_2d_multisample:         proc(target: u32, samples: i32, internalformat: u32, width: i32, height: i32, fixedsamplelocations: u8)                                                                                                        #cc_c;
+tex_storage_3d_multisample:         proc(target: u32, samples: i32, internalformat: u32, width: i32, height: i32, depth: i32, fixedsamplelocations: u8)                                                                                            #cc_c;
 texture_view:                     proc(texture: u32, target: u32, origtexture: u32, internalformat: u32, minlevel: u32, numlevels: u32, minlayer: u32, numlayers: u32)                                                                           #cc_c;
 bind_vertex_buffer:                proc(bindingindex: u32, buffer: u32, offset: int, stride: i32)                                                                                                                                                 #cc_c;
 vertex_attrib_format:              proc(attribindex: u32, size: i32, type_: u32, normalized: u8, relativeoffset: u32)                                                                                                                             #cc_c;
@@ -1334,8 +1334,8 @@ load_4_3 :: proc() {
 	_set_proc_address(&get_program_resource_location_index, "glGetProgramResourceLocationIndex\x00");
 	_set_proc_address(&shader_storage_block_binding,       "glShaderStorageBlockBinding\x00");
 	_set_proc_address(&tex_buffer_range,                  "glTexBufferRange\x00");
-	_set_proc_address(&tex_storage2_d_multisample,         "glTexStorage2DMultisample\x00");
-	_set_proc_address(&tex_storage3_d_multisample,         "glTexStorage3DMultisample\x00");
+	_set_proc_address(&tex_storage_2d_multisample,         "glTexStorage2DMultisample\x00");
+	_set_proc_address(&tex_storage_3d_multisample,         "glTexStorage3DMultisample\x00");
 	_set_proc_address(&texture_view,                     "glTextureView\x00");
 	_set_proc_address(&bind_vertex_buffer,                "glBindVertexBuffer\x00");
 	_set_proc_address(&vertex_attrib_format,              "glVertexAttribFormat\x00");
@@ -1426,20 +1426,20 @@ get_named_renderbuffer_parameter_iv:          proc(renderbuffer: u32, pname: u32
 create_textures:                           proc(target: u32, n: i32, textures: ^u32)                                                                                                                                #cc_c;
 texture_buffer:                            proc(texture: u32, internalformat: u32, buffer: u32)                                                                                                                     #cc_c;
 texture_buffer_range:                       proc(texture: u32, internalformat: u32, buffer: u32, offset: int, size: int)                                                                                             #cc_c;
-texture_storage1_d:                         proc(texture: u32, levels: i32, internalformat: u32, width: i32)                                                                                                         #cc_c;
-texture_storage2_d:                         proc(texture: u32, levels: i32, internalformat: u32, width: i32, height: i32)                                                                                            #cc_c;
-texture_storage3_d:                         proc(texture: u32, levels: i32, internalformat: u32, width: i32, height: i32, depth: i32)                                                                                #cc_c;
-texture_storage2_d_multisample:              proc(texture: u32, samples: i32, internalformat: u32, width: i32, height: i32, fixedsamplelocations: u8)                                                                 #cc_c;
-texture_storage3_d_multisample:              proc(texture: u32, samples: i32, internalformat: u32, width: i32, height: i32, depth: i32, fixedsamplelocations: u8)                                                     #cc_c;
-texture_sub_image1_d:                        proc(texture: u32, level: i32, xoffset: i32, width: i32, format: u32, type_: u32, pixels: rawptr)                                                                        #cc_c;
-texture_sub_image2_d:                        proc(texture: u32, level: i32, xoffset: i32, yoffset: i32, width: i32, height: i32, format: u32, type_: u32, pixels: rawptr)                                             #cc_c;
-texture_sub_image3_d:                        proc(texture: u32, level: i32, xoffset: i32, yoffset: i32, zoffset: i32, width: i32, height: i32, depth: i32, format: u32, type_: u32, pixels: rawptr)                   #cc_c;
-compressed_texture_sub_image1_d:              proc(texture: u32, level: i32, xoffset: i32, width: i32, format: u32, imageSize: i32, data: rawptr)                                                                      #cc_c;
-compressed_texture_sub_image2_d:              proc(texture: u32, level: i32, xoffset: i32, yoffset: i32, width: i32, height: i32, format: u32, imageSize: i32, data: rawptr)                                           #cc_c;
-compressed_texture_sub_image3_d:              proc(texture: u32, level: i32, xoffset: i32, yoffset: i32, zoffset: i32, width: i32, height: i32, depth: i32, format: u32, imageSize: i32, data: rawptr)                 #cc_c;
-copy_texture_sub_image1_d:                    proc(texture: u32, level: i32, xoffset: i32, x: i32, y: i32, width: i32)                                                                                                 #cc_c;
-copy_texture_sub_image2_d:                    proc(texture: u32, level: i32, xoffset: i32, yoffset: i32, x: i32, y: i32, width: i32, height: i32)                                                                      #cc_c;
-copy_texture_sub_image3_d:                    proc(texture: u32, level: i32, xoffset: i32, yoffset: i32, zoffset: i32, x: i32, y: i32, width: i32, height: i32)                                                        #cc_c;
+texture_storage_1d:                         proc(texture: u32, levels: i32, internalformat: u32, width: i32)                                                                                                         #cc_c;
+texture_storage_2d:                         proc(texture: u32, levels: i32, internalformat: u32, width: i32, height: i32)                                                                                            #cc_c;
+texture_storage_3d:                         proc(texture: u32, levels: i32, internalformat: u32, width: i32, height: i32, depth: i32)                                                                                #cc_c;
+texture_storage_2d_multisample:              proc(texture: u32, samples: i32, internalformat: u32, width: i32, height: i32, fixedsamplelocations: u8)                                                                 #cc_c;
+texture_storage_3d_multisample:              proc(texture: u32, samples: i32, internalformat: u32, width: i32, height: i32, depth: i32, fixedsamplelocations: u8)                                                     #cc_c;
+texture_sub_image_1d:                        proc(texture: u32, level: i32, xoffset: i32, width: i32, format: u32, type_: u32, pixels: rawptr)                                                                        #cc_c;
+texture_sub_image_2d:                        proc(texture: u32, level: i32, xoffset: i32, yoffset: i32, width: i32, height: i32, format: u32, type_: u32, pixels: rawptr)                                             #cc_c;
+texture_sub_image_3d:                        proc(texture: u32, level: i32, xoffset: i32, yoffset: i32, zoffset: i32, width: i32, height: i32, depth: i32, format: u32, type_: u32, pixels: rawptr)                   #cc_c;
+compressed_texture_sub_image_1d:              proc(texture: u32, level: i32, xoffset: i32, width: i32, format: u32, imageSize: i32, data: rawptr)                                                                      #cc_c;
+compressed_texture_sub_image_2d:              proc(texture: u32, level: i32, xoffset: i32, yoffset: i32, width: i32, height: i32, format: u32, imageSize: i32, data: rawptr)                                           #cc_c;
+compressed_texture_sub_image_3d:              proc(texture: u32, level: i32, xoffset: i32, yoffset: i32, zoffset: i32, width: i32, height: i32, depth: i32, format: u32, imageSize: i32, data: rawptr)                 #cc_c;
+copy_texture_sub_image_1d:                    proc(texture: u32, level: i32, xoffset: i32, x: i32, y: i32, width: i32)                                                                                                 #cc_c;
+copy_texture_sub_image_2d:                    proc(texture: u32, level: i32, xoffset: i32, yoffset: i32, x: i32, y: i32, width: i32, height: i32)                                                                      #cc_c;
+copy_texture_sub_image_3d:                    proc(texture: u32, level: i32, xoffset: i32, yoffset: i32, zoffset: i32, x: i32, y: i32, width: i32, height: i32)                                                        #cc_c;
 texture_parameter_f:                        proc(texture: u32, pname: u32, param: f32)                                                                                                                               #cc_c;
 texture_parameter_fv:                       proc(texture: u32, pname: u32, param: ^f32)                                                                                                                              #cc_c;
 texture_parameter_i:                        proc(texture: u32, pname: u32, param: i32)                                                                                                                               #cc_c;
@@ -1550,20 +1550,20 @@ load_4_5 :: proc() {
 	_set_proc_address(&create_textures,                           "glCreateTextures\x00");
 	_set_proc_address(&texture_buffer,                            "glTextureBuffer\x00");
 	_set_proc_address(&texture_buffer_range,                       "glTextureBufferRange\x00");
-	_set_proc_address(&texture_storage1_d,                         "glTextureStorage1D\x00");
-	_set_proc_address(&texture_storage2_d,                         "glTextureStorage2D\x00");
-	_set_proc_address(&texture_storage3_d,                         "glTextureStorage3D\x00");
-	_set_proc_address(&texture_storage2_d_multisample,              "glTextureStorage2DMultisample\x00");
-	_set_proc_address(&texture_storage3_d_multisample,              "glTextureStorage3DMultisample\x00");
-	_set_proc_address(&texture_sub_image1_d,                        "glTextureSubImage1D\x00");
-	_set_proc_address(&texture_sub_image2_d,                        "glTextureSubImage2D\x00");
-	_set_proc_address(&texture_sub_image3_d,                        "glTextureSubImage3D\x00");
-	_set_proc_address(&compressed_texture_sub_image1_d,              "glCompressedTextureSubImage1D\x00");
-	_set_proc_address(&compressed_texture_sub_image2_d,              "glCompressedTextureSubImage2D\x00");
-	_set_proc_address(&compressed_texture_sub_image3_d,              "glCompressedTextureSubImage3D\x00");
-	_set_proc_address(&copy_texture_sub_image1_d,                    "glCopyTextureSubImage1D\x00");
-	_set_proc_address(&copy_texture_sub_image2_d,                    "glCopyTextureSubImage2D\x00");
-	_set_proc_address(&copy_texture_sub_image3_d,                    "glCopyTextureSubImage3D\x00");
+	_set_proc_address(&texture_storage_1d,                         "glTextureStorage1D\x00");
+	_set_proc_address(&texture_storage_2d,                         "glTextureStorage2D\x00");
+	_set_proc_address(&texture_storage_3d,                         "glTextureStorage3D\x00");
+	_set_proc_address(&texture_storage_2d_multisample,              "glTextureStorage2DMultisample\x00");
+	_set_proc_address(&texture_storage_3d_multisample,              "glTextureStorage3DMultisample\x00");
+	_set_proc_address(&texture_sub_image_1d,                        "glTextureSubImage1D\x00");
+	_set_proc_address(&texture_sub_image_2d,                        "glTextureSubImage2D\x00");
+	_set_proc_address(&texture_sub_image_3d,                        "glTextureSubImage3D\x00");
+	_set_proc_address(&compressed_texture_sub_image_1d,              "glCompressedTextureSubImage1D\x00");
+	_set_proc_address(&compressed_texture_sub_image_2d,              "glCompressedTextureSubImage2D\x00");
+	_set_proc_address(&compressed_texture_sub_image_3d,              "glCompressedTextureSubImage3D\x00");
+	_set_proc_address(&copy_texture_sub_image_1d,                    "glCopyTextureSubImage1D\x00");
+	_set_proc_address(&copy_texture_sub_image_2d,                    "glCopyTextureSubImage2D\x00");
+	_set_proc_address(&copy_texture_sub_image_3d,                    "glCopyTextureSubImage3D\x00");
 	_set_proc_address(&texture_parameter_f,                        "glTextureParameterf\x00");
 	_set_proc_address(&texture_parameter_fv,                       "glTextureParameterfv\x00");
 	_set_proc_address(&texture_parameter_i,                        "glTextureParameteri\x00");
