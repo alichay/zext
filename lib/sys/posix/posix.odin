@@ -9,18 +9,18 @@ when ODIN_OS != "windows" {
 
 	foreign_system_library libc "c";
 	foreign libc {
-		getcwd :: proc(buf: ^u8, size: i64) -> ^u8        #link_name "getcwd" ---;
-		closedir :: proc(handle: ^DIR) -> i32             #link_name "closedir" ---;
-		chdir :: proc(path: ^u8) -> i32                   #link_name "chdir" ---;
-		//open  :: proc(^u8, int, mode) -> os.Handle        #link_name "open" ---;
-		mkdir :: proc(path: ^u8, perms: mode) -> i32      #link_name "mkdir" ---;
+		getcwd :: proc(buf: ^u8, size: i64) -> ^u8               #link_name "getcwd" ---;
+		closedir :: proc(handle: ^DIR) -> i32                    #link_name "closedir" ---;
+		chdir :: proc(path: ^u8) -> i32                          #link_name "chdir" ---;
+		_open :: proc(path: ^u8, mode: int) -> os.Handle         #link_name "open" ---;
+		mkdir :: proc(path: ^u8, perms: mode) -> i32             #link_name "mkdir" ---;
 		readlink :: proc(path, out_buf: ^u8, buf_size: feature_test.size_t) -> feature_test.ssize_t #link_name "readlink" ---;
-		realpath :: proc(in_buf, out_buf: ^u8) -> ^u8     #link_name "realpath" ---;
+		realpath :: proc(in_buf, out_buf: ^u8) -> ^u8            #link_name "realpath" ---;
 	}
 	
 	// A gross hack because the function signature in os_linux.odin and os_x.odin are wrong.
 	open :: proc(path: ^u8, access_mode: int, perms: mode) -> os.Handle #inline {
-		return (cast(proc(^u8, int, #c_vararg ...mode) -> os.Handle #cc_c)os._unix_open)(path, access_mode, perms);
+		return (cast(proc(^u8, int, #c_vararg ...mode) -> os.Handle #cc_c)_open)(path, access_mode, perms);
 	}
 
 	when ODIN_OS == "linux" {
