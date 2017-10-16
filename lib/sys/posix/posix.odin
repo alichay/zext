@@ -7,7 +7,7 @@ when ODIN_OS != "windows" {
 	export "posix_stat.odin";
 	export "posix_types.odin";
 
-	foreign_system_library libc "c";
+	foreign import libc "system:c";
 	foreign libc {
 		getcwd :: proc(buf: ^u8, size: i64) -> ^u8               #link_name "getcwd" ---;
 		closedir :: proc(handle: ^DIR) -> i32                    #link_name "closedir" ---;

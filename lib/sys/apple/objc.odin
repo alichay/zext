@@ -1,6 +1,5 @@
 
-
-#foreign_system_library "objc";
+foreign import "system:objc";
 
 foreign objc {
 	// NOTE: This function *must* be casted to be used.

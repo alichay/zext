@@ -4,4 +4,4 @@ when ODIN_OS == "osx" {
 	_ := compile_assert(false, "Unsupported Apple OS.");
 }
 
-foreign_system_library libc "c";
+foreign import libc "system:c";

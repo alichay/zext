@@ -4,7 +4,7 @@ using import "feature_test.odin";
 
 when ODIN_OS == "windows" {
 	import win32 "core:sys/windows.odin";
-	foreign_system_library "kernel32.lib";
+	foreign import "system:kernel32.lib";
 	foreign kernel32 {
 		_get_current_directory :: proc(buf_len: u32, buf: ^u8) #cc_std #link_name "GetCurrentDirectoryA" ---;
 		_create_directory :: proc(^u8, rawptr) -> i32          #cc_std #link_name "CreateDirectoryA" ---;

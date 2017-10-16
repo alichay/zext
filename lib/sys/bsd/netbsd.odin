@@ -1,2 +1,2 @@
 
-foreign_system_library libc "c";
+foreign import libc "system:c";

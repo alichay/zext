@@ -1,7 +1,7 @@
 // NOTE: This file is not part of `os.odin`, and therefore
 //       must be included explicitly.
 
-foreign_system_library cf "-fCoreFoundation";
+foreign import cf "system:-fCoreFoundation";
 using import "core:c.odin";
 import "../../str.odin";
 

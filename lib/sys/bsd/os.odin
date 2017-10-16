@@ -6,7 +6,7 @@ when ODIN_OS == "freebsd" {
 	_ := compile_assert(false, "Unsupported BSD-like system.");
 }
 
-foreign_system_library libc "c";
+foreign import libc "system:c";
 
 foreign libc {
 

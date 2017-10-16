@@ -1,5 +1,5 @@
-foreign_system_library dl   "dl";
-foreign_system_library libc "c";
+foreign import dl   "system:dl";
+foreign import libc "system:c";
 
 foreign dl {
 	// NOTE(zachary): Despite the _NS prefix, this is a pure C function.
