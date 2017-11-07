@@ -5,9 +5,10 @@ using import "feature_test.odin";
 when ODIN_OS == "windows" {
 	import win32 "core:sys/windows.odin";
 	foreign import "system:kernel32.lib";
+	@(default_calling_convention = "std")
 	foreign kernel32 {
-		_get_current_directory :: proc(buf_len: u32, buf: ^u8) #cc_std #link_name "GetCurrentDirectoryA" ---;
-		_create_directory :: proc(^u8, rawptr) -> i32          #cc_std #link_name "CreateDirectoryA" ---;
+		@(link_name = "GetCurrentDirectoryA") _get_current_directory :: proc(buf_len: u32, buf: ^u8) ---;
+		@(link_name = "CreateDirectoryA")     _create_directory      :: proc(^u8, rawptr) -> i32     ---;
 
 		// What on earth was I trying to do here?
 		// get_module_filename :: proc() -> i32           #cc_std #link_name "GetLastError"  ---;
@@ -20,7 +21,7 @@ when ODIN_OS == "windows" {
 _DEFAULT_PERMS :: posix.S_IRUSR | posix.S_IWUSR | posix.S_IRGRP | posix.S_IWGRP | posix.S_IROTH | posix.S_IWOTH;
 
 // Get a handle to the file pointed to by the path.
-open :: proc(path: string, flags := os.O_WRONLY | os.O_TRUNC, perms: posix.mode = _DEFAULT_PERMS) -> (os.Handle, bool) #inline {
+open :: inline proc(path: string, flags := os.O_WRONLY | os.O_TRUNC, perms: posix.mode = _DEFAULT_PERMS) -> (os.Handle, bool) {
 	when ODIN_OS == "windows" {
 		h, ok := os.open(path, flags, perms);
 		return h, (ok == os.ERROR_NONE);
@@ -33,45 +34,45 @@ open :: proc(path: string, flags := os.O_WRONLY | os.O_TRUNC, perms: posix.mode 
 }
 
 // A wrapper around os.close so that they can be called from fs
-close :: proc(fd: os.Handle) #inline {
+close :: inline proc(fd: os.Handle) {
 	os.close(fd);
 }
 
 // A wrapper around os.read so that they can be called from fs
-read :: proc(fd: os.Handle, data: []u8) -> (int, bool) #inline {
+read :: inline proc(fd: os.Handle, data: []u8) -> (int, bool) {
 	rv, err := os.read(fd, data);
 	return rv, err == 0;
 }
 
 // A wrapper around os.write so that they can be called from fs
-write :: proc(fd: os.Handle, data: string) -> (int, bool) #inline {
+write :: inline proc(fd: os.Handle, data: string) -> (int, bool) {
 	rv, err := os.write(fd, cast([]u8)data);
 	return rv, err == 0;
 }
 
 // A wrapper around os.write so that they can be called from fs
-write :: proc(fd: os.Handle, data: []u8) -> (int, bool) #inline {
+write :: inline proc(fd: os.Handle, data: []u8) -> (int, bool) {
 	rv, err := os.write(fd, data);
 	return rv, err == 0;
 }
 
 // A wrapper around os.seek so that they can be called from fs
-seek :: proc(fd: os.Handle, offset: i64, whence: int) -> (i64, bool) #inline {
+seek :: inline proc(fd: os.Handle, offset: i64, whence: int) -> (i64, bool) {
 	rv, err := os.seek(fd, offset, whence);
 	return rv, err == 0;
 }
 
 // A wrapper around os.file_size so that they can be called from fs
-file_size :: proc(fd: os.Handle) -> (i64, bool) #inline {
+file_size :: inline proc(fd: os.Handle) -> (i64, bool) {
 	rv, err := os.file_size(fd);
 	return rv, err == 0;
 }
 
-read_entire_file :: proc(path: string) -> (data: []u8, success: bool) #inline {
+read_entire_file :: inline proc(path: string) -> (data: []u8, success: bool) {
 	return os.read_entire_file(path);
 }
 
-read_file_to_string :: proc(path: string) -> (data: string, success: bool) #inline {
+read_file_to_string :: inline proc(path: string) -> (data: string, success: bool) {
 	buffer, success := os.read_entire_file(path);
 	if(!success) {
 		return "", false;
@@ -143,7 +144,7 @@ list_dir :: proc(path: string) -> ([]string, bool) {
 
 // Returns whether or not a file exists.
 // NOTE: Avoid patters similar to `if exists(path) do open(file)` because this is prone to race conditions.
-exists :: proc(path: string) -> bool #inline {
+exists :: inline proc(path: string) -> bool {
 
 	when ODIN_OS == "windows" {
 
@@ -159,7 +160,7 @@ exists :: proc(path: string) -> bool #inline {
 	}
 }
 
-is_file :: proc(path: string) -> bool #inline {
+is_file :: inline proc(path: string) -> bool {
 
 	when ODIN_OS == "windows" {
 
@@ -172,7 +173,7 @@ is_file :: proc(path: string) -> bool #inline {
 	}
 }
 
-is_directory :: proc(path: string) -> bool #inline {
+is_directory :: inline proc(path: string) -> bool {
 
 	when ODIN_OS == "windows" {
 
@@ -187,11 +188,11 @@ is_directory :: proc(path: string) -> bool #inline {
 		return posix.S_ISDIR(info.mode);
 	}
 }
-is_dir :: proc(path: string) -> bool #inline do return is_directory(path);
+is_dir :: inline proc(path: string) -> bool do return is_directory(path);
 
 // Not a directory, file, or s-link.
 // Always false on win32.
-is_special :: proc(path: string) -> bool #inline {
+is_special :: inline proc(path: string) -> bool {
 
 	when ODIN_OS == "windows" {
 		return false;
@@ -324,7 +325,7 @@ when ODIN_OS == "windows" {
 } else {
 	SEPERATOR :: '/';
 }
-is_path_separator :: proc(c: u8) -> bool #inline {
+is_path_separator :: inline proc(c: u8) -> bool {
 	when ODIN_OS == "windows" {
 		return c == '\\' || c == '/';
 	} else {

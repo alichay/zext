@@ -1,7 +1,7 @@
 import strings "str.odin";
 import "core:raw.odin";
 import "core:fmt.odin";
-import "os.odin";
+import "core:os.odin";
 import "core:strconv.odin";
 import "core:utf8.odin";
 import "core:utf16.odin";
@@ -66,7 +66,7 @@ parse :: proc(file: string) -> (^Value, Error) {
 }
 
 // Parse a JSON file. Returns a Value struct, which represents the root object node.
-parse_file :: proc(path: string) -> (^Value, Error) #inline {
+parse_file :: inline proc(path: string) -> (^Value, Error) {
 
 	contents, ok := os.read_entire_file(path);
 	
@@ -76,7 +76,7 @@ parse_file :: proc(path: string) -> (^Value, Error) #inline {
 }
 /*
 // Parse a JSON string. Returns a struct of type T, with the JSON data unmarshalled into the struct.
-parse :: proc(T: type, file: string) -> (T, Error) #inline {
+parse :: inline proc(T: type, file: string) -> (T, Error) {
 
 	data, err := parse(file);
 	if err.code != Error_Code.NO_ERROR do return T{}, err;
@@ -84,7 +84,7 @@ parse :: proc(T: type, file: string) -> (T, Error) #inline {
 }
 
 // Parse a JSON file. Returns a struct of type T, with the JSON data unmarshalled into the struct.
-parse_file :: proc(T: type, path: string) -> (T, Error) #inline {
+parse_file :: inline proc(T: type, path: string) -> (T, Error) {
 
 	data, err := parse_file(path);
 	if err.code != Error_Code.NO_ERROR do return T{}, err;
@@ -132,21 +132,21 @@ free_value :: proc(val: ^Value, caller := #caller_location) {
 
 NO_ERROR := Error{Error_Code.NO_ERROR, 0, 0};
 
-_to_string :: proc(char: rune) -> string #inline {
+_to_string :: inline proc(char: rune) -> string {
 	return transmute(string) raw.String {
 		data = cast(^u8) &char,
 		len  = size_of(char),
 	};
 }
 
-_to_string :: proc(dyn: [dynamic]u8) -> string #inline do return (cast(^string) &dyn)^;
-_to_string :: proc(slc: []u8)        -> string #inline do return (cast(^string) &slc)^;
+_to_string :: inline proc(dyn: [dynamic]u8) -> string do return (cast(^string) &dyn)^;
+_to_string :: inline proc(slc: []u8)        -> string do return (cast(^string) &slc)^;
 
-_is_digit :: proc(char: rune) -> bool #inline do return char >= '0' && char <= '9';
+_is_digit :: inline proc(char: rune) -> bool do return char >= '0' && char <= '9';
 
-_is_digit :: proc(char: u8) -> bool #inline do return _is_digit(cast(rune)char);
+_is_digit :: inline proc(char: u8) -> bool do return _is_digit(cast(rune)char);
 
-_append_rune :: proc(buf: ^[dynamic]u8, r: rune) #inline {
+_append_rune :: inline proc(buf: ^[dynamic]u8, r: rune) {
 	bytes, size := utf8.encode_rune(r);
 	for i in 0..size do append(buf, bytes[i]);
 }
@@ -180,7 +180,7 @@ _append_escaped_string :: proc(buf: ^[dynamic]u8, str: string) {
 	}
 }
 
-_indent :: proc(buf: ^[dynamic]u8, ind: int) #inline {
+_indent :: inline proc(buf: ^[dynamic]u8, ind: int) {
 	for i in 0..ind do append(buf, '\t');
 }
 

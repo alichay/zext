@@ -15,13 +15,13 @@ cat :: proc(strs: ...string) -> string {
 }
 
 // Does the first string start with the second one?
-starts_with :: proc(haystack, needle: string) -> bool #inline {
+starts_with :: inline proc(haystack, needle: string) -> bool {
 	if len(haystack) < len(needle) do return false;
 	for i in 0..len(needle) do if needle[i] != haystack[i] do return false;
 	return true;
 }
 // Does the first string end with the second one?
-ends_with :: proc(haystack, needle: string) -> bool #inline {
+ends_with :: inline proc(haystack, needle: string) -> bool {
 	if len(haystack) < len(needle) do return false;
 	hl, nl := len(haystack)-1, len(needle)-1;
 	for i in 0..len(needle) do if needle[nl-i] != haystack[hl-i] do return false;
@@ -34,9 +34,9 @@ dup :: proc(s: string) -> string {
 	return string(c);
 }
 
-is_whitespace :: proc(char: rune) -> bool #inline do return char == ' ' || char == '\t' || char == '\r' || char == '\n';
+is_whitespace :: inline proc(char: rune) -> bool do return char == ' ' || char == '\t' || char == '\r' || char == '\n';
 
-is_whitespace :: proc(char: u8) -> bool #inline do return is_whitespace(cast(rune)char);
+is_whitespace :: inline proc(char: u8) -> bool do return is_whitespace(cast(rune)char);
 
 
 trim :: proc(s: string) -> string {

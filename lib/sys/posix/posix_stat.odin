@@ -154,12 +154,12 @@ when feature_test.LINUX_WIN && ODIN_ARCH == "amd64" {
 	_ :: compile_assert(false); // Unsupported architecture
 }
 
-_is_type :: proc(mode: posix.mode, mask: posix.mode) -> bool #inline do return (mode & S_IFMT) == mask;
+_is_type :: inline proc(mode: posix.mode, mask: posix.mode) -> bool do return (mode & S_IFMT) == mask;
 
-S_ISBLK  :: proc(mode: posix.mode) -> bool #inline do return _is_type(mode, S_IFBLK);
-S_ISCHR  :: proc(mode: posix.mode) -> bool #inline do return _is_type(mode, S_IFCHR);
-S_ISDIR  :: proc(mode: posix.mode) -> bool #inline do return _is_type(mode, S_IFDIR);
-S_ISFIFO :: proc(mode: posix.mode) -> bool #inline do return _is_type(mode, S_IFIFO);
-S_ISREG  :: proc(mode: posix.mode) -> bool #inline do return _is_type(mode, S_IFREG);
-S_ISLNK  :: proc(mode: posix.mode) -> bool #inline do return _is_type(mode, S_IFLNK);
-S_ISSOCK :: proc(mode: posix.mode) -> bool #inline do return _is_type(mode, S_IFSOCK);
+S_ISBLK  :: inline proc(mode: posix.mode) -> bool do return _is_type(mode, S_IFBLK);
+S_ISCHR  :: inline proc(mode: posix.mode) -> bool do return _is_type(mode, S_IFCHR);
+S_ISDIR  :: inline proc(mode: posix.mode) -> bool do return _is_type(mode, S_IFDIR);
+S_ISFIFO :: inline proc(mode: posix.mode) -> bool do return _is_type(mode, S_IFIFO);
+S_ISREG  :: inline proc(mode: posix.mode) -> bool do return _is_type(mode, S_IFREG);
+S_ISLNK  :: inline proc(mode: posix.mode) -> bool do return _is_type(mode, S_IFLNK);
+S_ISSOCK :: inline proc(mode: posix.mode) -> bool do return _is_type(mode, S_IFSOCK);
