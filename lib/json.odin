@@ -299,6 +299,12 @@ _parse_object :: proc(using parser: ^_Parser) -> (^Value, Error) {
 		}
 
 		c := file[pos];
+
+		if c == '}' {
+			pos += 1;
+			x += 1;
+			return val, NO_ERROR;
+		}
 		if c == '"' || c == '\'' {
 			
 			// Parse the value's key.
@@ -395,6 +401,12 @@ _parse_array :: proc(using parser: ^_Parser) -> (^Value, Error) {
 		if err.code != Error_Code.NO_ERROR {
 			free_value(val);
 			return nil, err;
+		}
+
+		if file[pos] == ']' {
+			pos += 1;
+			x += 1;
+			return val, NO_ERROR;
 		}
 
 		// Set the actual property of the object.

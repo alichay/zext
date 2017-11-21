@@ -2,5 +2,7 @@
 	"name": "Test Data",
 	"repo": "http://github.com/zangent/zext",
 	"test": "\u00E9\u00E9\u00E9\uD83D\uDE02\u00E9",
-	"hehehe": ["dsadas", -10.532432, 18446744073709551617, true, false, null, {"tester:": "woohoo!"}]
+	"hehehe": ["dsadas", -10.532432, 18446744073709551617, true, false, null, {"tester:": "woohoo!"}],
+	"empty_obj": {},
+	"empty_arr": []
 }
