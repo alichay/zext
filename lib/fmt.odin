@@ -9,13 +9,13 @@ import "core:math.odin"
 	PRINTP GUIDE
 	---------------
 
-	% prints next argument in order
-	%(d) prints a specific index but DOES NOT change the index.
-	%s(d) prints a specific index and DOES change the index to the next value.
-	%% prints a '%'
+	{} prints next argument in order
+	{(d)} prints a specific index but DOES NOT change the index.
+	{s(d)} prints a specific index and DOES change the index to the next value.
+	{{ prints a '{'
 
-	("% % % %1 % %% %s1% %", 1, 2, 3, 4)
-	  -> "1 2 3 1 4 % 12 3"
+	("{} {} {} {1} {} {{} {s1}{} {} {11} {12} {{13} test", 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 1.1, 1.2)
+	  -> "1 2 3 1 4 {} 12 3 1.100 1.200 {13} test"
 */
 
 // fprint* procedures write to a file descriptor
@@ -44,10 +44,10 @@ printp ::     proc(fmt: string, args: ...any) -> int { return fprintp(os.stdout,
 printp_err :: proc(fmt: string, args: ...any) -> int { return fprintp(os.stderr, fmt, ...args); }
 
 /*
-	% prints next argument in order
-	%(d) prints a specific index but DOES NOT change the index.
-	%s(d) prints a specific index and DOES change the index to the next value.
-	%% prints a '%'
+	{} prints next argument in order
+	{(d)} prints a specific index but DOES NOT change the index.
+	{s(d)} prints a specific index and DOES change the index to the next value.
+	{{ prints a '{'
 */
 
 sbprintp :: proc(b: ^String_Buffer, fmt: string, args: ...any) -> string {
@@ -62,7 +62,7 @@ sbprintp :: proc(b: ^String_Buffer, fmt: string, args: ...any) -> string {
 		fi = Fmt_Info{buf = b, good_arg_index = true};
 
 		prev_i := i;
-		for i < end && fmt[i] != '%' {
+		for i < end && fmt[i] != '{' {
 			i += 1;
 		}
 		if i > prev_i {
@@ -72,14 +72,16 @@ sbprintp :: proc(b: ^String_Buffer, fmt: string, args: ...any) -> string {
 			break;
 		}
 
+
+
 		// Process a "verb"
 
 		is_setting_pos := false;
 		read_pos: int = -1;
 		byte_to_write: u8 = 0;
 
-		if fmt[i+1] == '%' {
-			write_byte(b, '%');
+		if fmt[i+1] == '{' {
+			write_byte(b, '{');
 			i += 1;
 			continue;
 		}
@@ -96,16 +98,18 @@ sbprintp :: proc(b: ^String_Buffer, fmt: string, args: ...any) -> string {
 
 			number_gather_loop:
 			for ; i < end && str.is_numeric(fmt[i]); i += 1 {
-
-				new_read_pos = read_pos * 10 + int(fmt[i] - '0');
-
-				if new_read_pos > len(args) {
-					break number_gather_loop;
-				} else do read_pos = new_read_pos;
+				read_pos = read_pos * 10 + int(fmt[i] - '0');
 			}
 			i -= 1;
 		} else if is_setting_pos {
-			write_string(b, "%!(BAD ARGUMENT NUMBER)");
+			write_string(b, "%!(INVALID ARGUMENT SYNTAX)");
+			continue;
+		}
+
+		i += 1;
+
+		if fmt[i] != '}' {
+			write_string(b, "%!(INVALID ARGUMENT SYNTAX)");
 			continue;
 		}
 
@@ -117,21 +121,6 @@ sbprintp :: proc(b: ^String_Buffer, fmt: string, args: ...any) -> string {
 
 		if read_pos > 0 && read_pos <= len(args) do fmt_value(&fi, args[read_pos-1], 'v');
 		else do write_string(b, "%!(MISSING ARGUMENT)");
-/*
-		verb, w := utf8.decode_rune(fmt[i..]);
-		i += w;
-
-		if fmt[i+1] == '%' {
-			write_byte(b, '%');
-		} else if !fi.good_arg_index {
-			write_string(b, "%!(BAD ARGUMENT NUMBER)");
-		} else if arg_index >= len(args) {
-			write_string(b, "%!(MISSING ARGUMENT)");
-		} else {
-			fmt_arg(&fi, args[arg_index], verb);
-			arg_index += 1;
-		}
-		*/
 	}
 
 	return to_string(b^);
