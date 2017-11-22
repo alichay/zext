@@ -1,4 +1,5 @@
 export "core:strings.odin";
+export "core:strconv.odin";
 
 cat :: proc(strs: ...string) -> string {
 	total := 0;
@@ -92,3 +93,13 @@ split :: proc(haystack, needle: string) -> [dynamic]string {
 
 	return strs;
 }
+
+is_lower_latin :: inline proc(char: u8) -> bool do return char >= 'a' && char <= 'z';
+is_upper_latin :: inline proc(char: u8) -> bool do return char >= 'A' && char <= 'Z';
+
+is_digit :: inline proc(char: u8) -> bool do return char >= '0' && char <= '9';
+is_numeric :: is_digit;
+is_latin :: inline proc(char: u8) -> bool do return is_lower_latin(char) || is_upper_latin(char);
+is_alpha :: is_latin;
+
+is_alphanumeric :: inline proc(char: u8) -> bool do return is_alpha(char) || is_digit(char);
